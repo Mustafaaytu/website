@@ -1,0 +1,172 @@
+---
+/**
+ * A passage of the iyi tree, quoted on a page by the id scripts/tools.mjs
+ * gave it.
+ *
+ * `Quote` sets one README.md recording and `Lifted` one block a generator
+ * read. A passage is a run of consecutive blocks of one file, prose and
+ * listings together, because the repository's own account of a command is
+ * usually a sentence and the stanza it introduces, and splitting them would
+ * leave the page to write the sentence. The generator found the run by an
+ * anchor that matches exactly one block of the file at the release tag, and
+ * each block travels with its lines, so the citation under the passage is the
+ * range a reader can open and compare.
+ *
+ * The prose is the file's own and is marked as somebody else's sentences with
+ * an edge, the way the site marks a recording. A `console` block is set in the
+ * console face and a `sh` block in the shell face, through the same
+ * `renderRecording` every other recording on the site uses, with a control
+ * that copies the commands alone. Any other block is a listing, and goes
+ * through `Lifted`.
+ */
+import tools from "../generated/tools.json";
+import Lifted from "./Lifted.astro";
+import { renderRecording } from "../lib/recording";
+
+interface Props {
+  id: string;
+}
+
+type Block = {
+  kind: "paragraph" | "list" | "code";
+  html?: string;
+  items?: string[];
+  ordered?: boolean;
+  lang?: string;
+  text?: string;
+  caption?: string | null;
+  cite: string;
+  url?: string;
+};
+
+type Passage = { id: string; file: string; cite: string; url: string; blocks: Block[] };
+
+const { id } = Astro.props;
+const passages = tools.passages as unknown as Record<string, Passage>;
+const passage = passages[id];
+
+if (!passage) {
+  throw new Error(
+    `Passage: "${id}" is not a passage scripts/tools.mjs reads. It has ` +
+      `${Object.keys(passages).join(", ")}. Add an anchor to PASSAGES in that ` +
+      `script rather than typing the text into a page.`,
+  );
+}
+
+/* The lines to run: every non-blank line of a `sh` block, and the prompted
+ * lines of a console recording with the prompt taken off, so what lands in a
+ * shell is what the recording ran. The same rule Quote copies by. */
+const commands = (block: Block, face: "console" | "shell") =>
+  (face === "shell"
+    ? (block.text ?? "").split("\n").filter((line) => line.trim().length > 0)
+    : (block.text ?? "")
+        .split("\n")
+        .filter((line) => line.startsWith("$ "))
+        .map((line) => line.slice(2))
+  ).join("\n");
+
+const faceOf = (block: Block): "console" | "shell" | null =>
+  block.lang === "console" ? "console" : block.lang === "sh" ? "shell" : null;
+
+const copies = passage.blocks.some((block) => block.kind === "code" && faceOf(block) !== null);
+---
+
+<figure class="passage">
+  <div class="passage-body">
+    {
+      passage.blocks.map((block) => {
+        if (block.kind === "paragraph") return <blockquote set:html={`<p>${block.html ?? ""}</p>`} />;
+        if (block.kind === "list") {
+          const items = (block.items ?? []).map((item) => `<li>${item}</li>`).join("");
+          return <blockquote set:html={block.ordered ? `<ol>${items}</ol>` : `<ul>${items}</ul>`} />;
+        }
+        const face = faceOf(block);
+        if (face === null) {
+          return (
+            <Lifted
+              text={block.text ?? ""}
+              caption={block.caption ?? block.lang ?? passage.file}
+              cite={block.cite}
+              href={block.url}
+            />
+          );
+        }
+        return (
+          <div class="console">
+            <div class="console-chrome">
+              <i aria-hidden="true" />
+              <i aria-hidden="true" />
+              <i aria-hidden="true" />
+              <span class="caption">quoted from {block.cite}</span>
+              <button type="button" class="copy" data-copy={commands(block, face)} aria-label="Copy the commands">
+                Copy
+              </button>
+            </div>
+            <pre set:html={renderRecording(block.text ?? "", face)} />
+          </div>
+        );
+      })
+    }
+  </div>
+  <figcaption>Quoted verbatim from <a href={passage.url}>{passage.cite}</a>.</figcaption>
+</figure>
+
+{
+  copies && (
+    <script>
+      import { wireCopyButtons } from "../lib/copy";
+      wireCopyButtons();
+    </script>
+  )
+}
+
+<style>
+  .passage {
+    margin: 0 0 1.6rem;
+    max-width: 62rem;
+  }
+
+  .passage-body {
+    display: grid;
+    gap: 0.8rem;
+  }
+
+  /* Somebody else's sentences, marked with an edge rather than a quotation
+   * mark, and set at the reading measure. */
+  .passage blockquote {
+    margin: 0;
+    padding-inline-start: 0.9rem;
+    border-inline-start: var(--hair) solid var(--hairline);
+    color: var(--graphite);
+    max-width: 66ch;
+  }
+
+  .passage blockquote :global(p),
+  .passage blockquote :global(ul),
+  .passage blockquote :global(ol) {
+    margin: 0;
+  }
+
+  .passage blockquote :global(ul),
+  .passage blockquote :global(ol) {
+    padding-inline-start: 1.2em;
+  }
+
+  /* A quoted sentence can hold a long command in a code span, and the site's
+   * spans do not wrap; inside a measure that would push the page sideways. */
+  .passage blockquote :global(code) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .passage :global(.lifted) {
+    margin-block: 0;
+  }
+
+  figcaption {
+    margin-block-start: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: var(--step--2);
+    color: var(--mute);
+  }
+</style>

@@ -22,8 +22,8 @@
 // recorded or something they changed, because an unedited curated sample can
 // run straight from its recorded module while edited text has to go to the
 // compile service. The only copy of the recorded text the client can reach is
-// records/highlight.json, which is roughly a quarter of a megabyte of
-// listings; importing that into an engine to answer one yes-or-no question
+// records/highlight.json, which holds every listing the site prints, the API
+// reference's included; importing that into an engine to answer one yes-or-no question
 // would ship all of it to every visitor. A digest is a few dozen bytes and
 // answers the same question. It doubles as a staleness gate: a sample edited
 // since this ran no longer matches its own recorded module either, and

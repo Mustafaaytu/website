@@ -1,0 +1,149 @@
+---
+/**
+ * The API reference's index: every prelude type and every std module the
+ * release ships, each linked to its surface.
+ *
+ * The list is records/api.json, held to the release by scripts/records.mjs:
+ * the prelude types are the ones `iyi doc prelude` listed, and the modules are
+ * every file under src/std/ at the tag, so a module that is in the library and
+ * not on this page fails the build. The sentence beside each is quoted, never
+ * written: the first sentence of the type's own doc comment, or of the comment
+ * its module's file opens with, as scripts/api.mjs read them. An entry whose
+ * source has no such comment has nothing beside it, rather than something of
+ * ours.
+ */
+import Page from "../../../layouts/Page.astro";
+import api from "../../../generated/api.json";
+
+const base = import.meta.env.BASE_URL;
+const href = (slug: string) => `${base}docs/api/${slug}/`;
+const { provenance } = api;
+
+const groups = [
+  {
+    id: "prelude",
+    title: "The prelude",
+    intro: `Every type <code>iyi doc prelude</code> lists at ${provenance.tag}: the prelude every program carries.`,
+    entries: api.prelude,
+  },
+  {
+    id: "std",
+    title: "The standard library",
+    intro: `Every module under <code>src/std/</code> at ${provenance.tag}, named the way an <code>import</code> writes it.`,
+    entries: api.std,
+  },
+];
+---
+
+<Page
+  kind="CollectionPage"
+  title="API reference"
+  summary={`The prelude's ${api.prelude.length} types and the standard library's ${api.std.length} modules at iyi ${provenance.tag}, each as iyi doc prints it: every exported declaration with its doc comment, and no bodies.`}
+>
+  <section class="wrap head">
+    <p class="label"><a href={`${base}docs/`}>Docs</a>, API reference</p>
+    <h1>The surface of the prelude and the standard library.</h1>
+    <p class="lede">
+      Each page is what <code>iyi doc</code> prints for one type or module:
+      every exported declaration with its doc comment, and no bodies. It is
+      recorded from the release, and set in the compiler's own tokens.
+    </p>
+    <p class="cite">
+      Recorded by <code>{provenance.command}</code> with {provenance.compiler},
+      commit {provenance.commit.slice(0, 12)}, on {provenance.machine}.
+    </p>
+  </section>
+
+  {groups.map((group) => (
+    <section class="wrap" aria-labelledby={group.id}>
+      <h2 id={group.id}>{group.title}</h2>
+      <p class="sub" set:html={group.intro} />
+      <ul class="entries">
+        {group.entries.map((entry) => (
+          <li>
+            <a href={href(entry.slug)}><code>{entry.name}</code></a>
+            <span>
+              {entry.summary !== null && <span set:html={entry.summary} />}
+              {entry.refusal !== null && (
+                <span class="refused">
+                  {" "}
+                  <code>iyi doc</code> refuses this module; its page carries the reason.
+                </span>
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+
+  <style>
+    section {
+      padding-block: clamp(1.2rem, 2.5vw, 2rem);
+    }
+
+    .head {
+      padding-block-start: clamp(2.5rem, 5vw, 4rem);
+    }
+
+    .head h1 {
+      font-size: var(--step-3);
+      margin-block: 0.5rem 0.8rem;
+    }
+
+    .lede,
+    .sub {
+      color: var(--graphite);
+      max-width: 66ch;
+    }
+
+    h2 {
+      font-size: var(--step-2);
+      margin-block-end: 0.4rem;
+    }
+
+    /* The provenance, in the evidence face: which compiler printed every page
+     * below, at which commit, on which box. */
+    .cite {
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      color: var(--mute);
+      max-width: 72ch;
+    }
+
+    .cite code {
+      font-size: inherit;
+    }
+
+    /* One line per entry: the name as `import` or the prelude spells it, then
+     * the sentence its own source opens with. */
+    .entries {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .entries li {
+      display: grid;
+      grid-template-columns: minmax(10rem, 14rem) minmax(0, 1fr);
+      gap: 0.2rem 1.2rem;
+      padding-block: 0.55rem;
+      border-block-end: var(--hair) solid var(--hairline);
+    }
+
+    .entries li > span {
+      color: var(--graphite);
+      max-width: 72ch;
+    }
+
+    .refused {
+      color: var(--mute);
+    }
+
+    @media (max-width: 40rem) {
+      .entries li {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+  </style>
+</Page>

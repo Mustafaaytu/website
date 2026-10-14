@@ -1,0 +1,268 @@
+name: record
+
+# The records under `records/` are what only a machine with the compiler can
+# produce, and the site's own build has no compiler. So until this workflow
+# they were made by hand after a release, and the site said what the last
+# person to run `npm run record` saw for as long as nobody ran it again.
+#
+# This is that person, once a day. When iyi's CHANGELOG.md states a release
+# the committed records do not name, it builds the compiler at the tag the way
+# iyi's own CI builds it, runs `npm run record`, runs the site's gates over the
+# result, and opens a pull request. A human merges it: a release that changes
+# what a recorded program prints changes a page, and somebody should read it.
+#
+# A recorder that refuses fails the job with its own sentence, and that is the
+# outcome, not a fault in this file. A site-authored program that stops
+# compiling after a language change (`samples/tour/`, `records/agent/`,
+# `records/break/`), a verdict that moved, an MCP answer that no longer
+# matches the shell's: each is a fix a person makes here, in the program or
+# the recorder, and a pull request that papered over it would publish it.
+
+on:
+  schedule:
+    - cron: "41 5 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+# One recording at a time. A second run while the first is building would
+# record the same release twice and race to the same branch.
+concurrency:
+  group: record
+  cancel-in-progress: false
+
+jobs:
+  # Cheap, and on the plain runner: a day with nothing new costs a clone, not
+  # a compiler build. scripts/record-due.mjs says which release, whether any
+  # record names another commit, and which container iyi builds in.
+  release:
+    name: Which release, and whether it is recorded
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
+      image: ${{ steps.release.outputs.image }}
+      record: ${{ steps.release.outputs.due == 'true' && steps.pending.outputs.waiting != 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: site
+
+      # Full history and the tags: `releaseRef` reads the tag CHANGELOG.md
+      # names and fails by name on a clone that does not have it.
+      - uses: actions/checkout@v4
+        with:
+          repository: iyilang/iyi
+          path: iyi
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - id: release
+        working-directory: site
+        env:
+          IYI_REPO: ${{ github.workspace }}/iyi
+        run: node scripts/record-due.mjs
+
+      # A recording already waiting for review is not made again every morning:
+      # the scheduled run leaves the open branch alone. A dispatch is somebody
+      # asking, so it records and updates the branch.
+      - id: pending
+        if: steps.release.outputs.due == 'true' && github.event_name == 'schedule'
+        working-directory: site
+        env:
+          BRANCH: records/${{ steps.release.outputs.tag }}
+        run: |
+          if git ls-remote --exit-code --heads origin "$BRANCH" > /dev/null; then
+            echo "$BRANCH is already waiting for review; dispatch this workflow to record it again"
+            echo "waiting=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  # In the image iyi.yml's `build` job names at the tag, which carries the
+  # Crystal and the LLVM that release is built with. `make all` is that job's
+  # `make crystal` and the `make iyi` the jobs after it run, and nothing else
+  # is installed for the build because iyi's CI installs nothing else for it.
+  record:
+    name: Build ${{ needs.release.outputs.tag }} and record it
+    needs: release
+    if: needs.release.outputs.record == 'true'
+    runs-on: ubuntu-24.04
+    # A ceiling, not a measurement: iyi gives its own compiler build 30, and
+    # the recorders then compile every tour sample natively and for wasm.
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    container:
+      image: ${{ needs.release.outputs.image }}
+    defaults:
+      run:
+        shell: bash
+    # The same three lines iyi.yml sets, for the same reason: in a container
+    # the workspace is not the container user's, git refuses it after the
+    # checkout step, and the Makefile then builds a compiler that names no
+    # commit. `requireReleaseCompiler` reads that commit out of
+    # `iyi --version`, so here it would refuse every recording.
+    env:
+      GIT_CONFIG_COUNT: "1"
+      GIT_CONFIG_KEY_0: safe.directory
+      GIT_CONFIG_VALUE_0: "*"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: site
+          persist-credentials: false
+
+      # The tag itself, clean: `requireReleaseTree` refuses any other commit
+      # and any edited tree, and `.build/` is ignored by iyi's own .gitignore.
+      - uses: actions/checkout@v4
+        with:
+          repository: iyilang/iyi
+          ref: ${{ needs.release.outputs.tag }}
+          path: iyi
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Build the compiler at ${{ needs.release.outputs.tag }}
+        run: make -C iyi all
+
+      # wasi-sdk 24, not a later one: `record:wasm` links for `wasm32-wasi`,
+      # the target README.md publishes, and later releases renamed that
+      # sysroot. The image ships no curl, which iyi.yml installs the same way
+      # where it needs one. The digest was taken from the published tarball,
+      # so a replaced asset stops here rather than in the linker.
+      - name: wasi-sdk 24
+        run: |
+          if ! command -v curl > /dev/null; then
+            apt-get update -qq && apt-get install -y -qq curl
+          fi
+          curl -fsSL -o "$RUNNER_TEMP/wasi-sdk.tar.gz" \
+            https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-24/wasi-sdk-24.0-x86_64-linux.tar.gz
+          echo "c6c38aab56e5de88adf6c1ebc9c3ae8da72f88ec2b656fb024eda8d4167a0bc5  $RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/wasi-sdk-24"
+          tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP/wasi-sdk-24" --strip-components=1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Install site dependencies
+        working-directory: site
+        run: npm ci
+
+      # `npm run record`, never a recorder by name, so a recorder added to
+      # that script is run here without anybody editing this file. Paths
+      # come from the shell: inside a container `github.workspace` is the
+      # host's path, and only the environment variables name the mount.
+      - name: Record
+        working-directory: site
+        run: |
+          export IYI_REPO="$GITHUB_WORKSPACE/iyi"
+          export IYI_BUILD="$GITHUB_WORKSPACE/iyi/.build"
+          export WASI_SDK="$RUNNER_TEMP/wasi-sdk-24"
+          npm run record 2>&1 | tee "$RUNNER_TEMP/record.log"
+
+      # The recorder's own sentence, where the person who has to act on it
+      # looks first.
+      - name: Say why the recording was refused
+        if: failure()
+        run: |
+          if [ -f "$RUNNER_TEMP/record.log" ]; then
+            {
+              echo "### npm run record refused ${{ needs.release.outputs.tag }}"
+              echo
+              echo '```'
+              tail -n 40 "$RUNNER_TEMP/record.log"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: records
+          path: site/records
+          retention-days: 1
+
+  # Back on the plain runner, in the environment site.yml builds and deploys
+  # in, so the gates the new records pass here are the gates they meet there.
+  propose:
+    name: Gate the recording and propose it
+    needs: [release, record]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: site
+
+      # At the tag, as site.yml checks it out, with the history site_facts.py
+      # counts.
+      - uses: actions/checkout@v4
+        with:
+          repository: iyilang/iyi
+          ref: ${{ needs.release.outputs.tag }}
+          path: iyi
+          fetch-depth: 0
+
+      # Replaced rather than overlaid, so a module whose sample the release
+      # removed leaves the tree instead of lingering beside the new manifest.
+      - name: Replace records/ with the recording
+        run: rm -rf site/records
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: records
+          path: site/records
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: The paths the documents cite
+        working-directory: site
+        run: python3 bench/website_citations.py
+
+      - name: Install site dependencies
+        working-directory: site
+        run: npm ci
+
+      # The whole chain site.yml runs: the generators, scripts/records.mjs
+      # over the new records at the tag, `astro build`, and the prose, link
+      # and budget gates over the output.
+      - name: Generate, build, and gate the built site
+        working-directory: site
+        run: npm run build
+
+      # A pull request opened with GITHUB_TOKEN starts no other workflow, so
+      # site.yml does not run on it; the gates above are the same ones and
+      # have passed. The repository must allow Actions to create pull
+      # requests (Settings, Actions, General) for this step to be permitted.
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          path: site
+          add-paths: records
+          branch: records/${{ needs.release.outputs.tag }}
+          delete-branch: true
+          commit-message: re-record at ${{ needs.release.outputs.version }}
+          title: re-record at ${{ needs.release.outputs.version }}
+          body: |
+            iyi's CHANGELOG.md states ${{ needs.release.outputs.version }}, and the committed records named another commit.
+
+            Recorded by `npm run record` against a compiler built at `${{ needs.release.outputs.tag }}` in `${{ needs.release.outputs.image }}`, the image iyi's own CI builds that release in, with wasi-sdk 24. `bench/website_citations.py` and `npm run build`, with every gate it runs, passed over the result.
+
+            Read the diff before merging: a recorded program that prints something new is a page that says something new.

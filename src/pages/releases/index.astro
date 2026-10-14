@@ -1,0 +1,261 @@
+---
+/**
+ * Every release, newest first: what it says it is, and what it breaks.
+ *
+ * Nothing on this page is the site's. The summaries are the paragraphs each
+ * release section of CHANGELOG.md opens with, which are also the tag's
+ * message and so the GitHub release's body. What breaks is the passages those
+ * summaries mark as breaking themselves, and the entries filed under Removed;
+ * `scripts/releases.mjs` says exactly how it finds them, and promotes nothing
+ * the changelog did not mark. The compatibility rule is SPEC.md's, quoted
+ * with its lines, because a page that wrote its own would be making a promise
+ * the project did not make.
+ *
+ * The counts and dates in the lede are the changelog's headings, counted.
+ */
+import Page from "../../layouts/Page.astro";
+import {
+  notesProvenance,
+  releaseHref,
+  releaseNotes,
+  versioning,
+  whatBreaks,
+} from "../../lib/release-notes";
+
+const base = import.meta.env.BASE_URL;
+const latest = releaseNotes[0];
+const first = releaseNotes[releaseNotes.length - 1];
+---
+
+<Page
+  kind="CollectionPage"
+  title="Releases"
+  summary={`Every iyi release from ${first.version} to ${latest.version}, newest first: each one's own summary out of CHANGELOG.md, what it breaks, and the rule SPEC.md states for artifacts across releases.`}
+>
+  <section class="wrap head">
+    <p class="label">Releases, out of <a href={notesProvenance.changelog}>CHANGELOG.md</a> at {notesProvenance.tag}</p>
+    <h1>Every release, newest first.</h1>
+    <p class="lede">
+      {releaseNotes.length} releases, the first on {first.date} and the latest
+      on {latest.date}. Each summary is the release's own. What breaks is
+      what that summary marks as breaking, and what the release removed. A
+      release's page lists every change it records, by the sentence each one
+      opens with.
+    </p>
+    <p class="feed">
+      <a href={`${base}releases/feed.xml`}>RSS feed</a> of the same, one item
+      per release.
+    </p>
+  </section>
+
+  <section class="wrap rule-section">
+    <h2>What carries across a release</h2>
+    <p class="sub">
+      The specification's rule for compiled modules, and the reason a
+      project's <code>.iyimod</code> files are rebuilt after an upgrade:
+    </p>
+    <blockquote class="spec">
+      {versioning.paragraphs.map((paragraph) => <p set:html={paragraph} />)}
+      <cite>
+        <a href={versioning.url}>
+          {versioning.file} {versioning.section}, lines {versioning.from} to {versioning.to}
+        </a>
+      </cite>
+    </blockquote>
+  </section>
+
+  <section class="wrap">
+    <ol class="releases">
+      {
+        releaseNotes.map((release) => {
+          const breaks = whatBreaks(release);
+          return (
+            <li>
+              <article>
+                <header>
+                  <h2>
+                    <a href={releaseHref(base, release)}>{release.version}</a>
+                  </h2>
+                  <time datetime={release.date}>{release.date}</time>
+                </header>
+                {(breaks.marked.length > 0 || breaks.removed.length > 0) && (
+                  <div class="breaks">
+                    <p class="label">What breaks</p>
+                    {breaks.marked.map((passage) => (
+                      <p set:html={passage} />
+                    ))}
+                    {breaks.removed.length > 0 && (
+                      <>
+                        <p class="removed-label">Removed</p>
+                        <ul>
+                          {breaks.removed.map((item) => (
+                            <li set:html={item} />
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </div>
+                )}
+                <div class="summary">
+                  {release.summary.map((paragraph) => (
+                    <p set:html={paragraph} />
+                  ))}
+                </div>
+                <p class="links">
+                  <a href={releaseHref(base, release)}>Every change in {release.version}</a>
+                  <a href={release.url}>The section in CHANGELOG.md</a>
+                  <a href={release.tag}>The release on GitHub</a>
+                </p>
+              </article>
+            </li>
+          );
+        })
+      }
+    </ol>
+  </section>
+
+  <style>
+    section {
+      padding-block: clamp(1.2rem, 2.5vw, 2rem);
+    }
+
+    .head {
+      padding-block-start: clamp(2.5rem, 5vw, 4rem);
+    }
+
+    .head h1 {
+      font-size: var(--step-4);
+      margin-block: 0.5rem 0.8rem;
+    }
+
+    .head .label a {
+      color: inherit;
+    }
+
+    .lede {
+      color: var(--graphite);
+      max-width: 62ch;
+      font-size: var(--step-0);
+    }
+
+    .feed {
+      font-size: var(--step--1);
+      color: var(--graphite);
+    }
+
+    h2 {
+      font-size: var(--step-2);
+      margin-block-end: 0.6rem;
+    }
+
+    .sub {
+      color: var(--graphite);
+      max-width: 62ch;
+      margin-block-end: 1rem;
+    }
+
+    /* The rule, set as the lessons set a premise: a quotation with its
+     * citation under it, in the evidence face. */
+    .spec {
+      margin: 0;
+      max-width: 68ch;
+      padding-inline-start: 1.1rem;
+      border-inline-start: 2px solid var(--hairline);
+    }
+
+    .spec p {
+      margin-block: 0 0.8rem;
+    }
+
+    .spec cite {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      font-style: normal;
+      color: var(--mute);
+    }
+
+    .releases {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: clamp(1.5rem, 3vw, 2.5rem);
+    }
+
+    .releases > li {
+      padding-block-start: clamp(1.2rem, 2.5vw, 1.8rem);
+      border-block-start: var(--hair) solid var(--hairline);
+    }
+
+    article {
+      max-width: 72ch;
+    }
+
+    article header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.2rem 1rem;
+    }
+
+    article h2 {
+      margin: 0;
+    }
+
+    article h2 a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    time {
+      font-family: var(--font-mono);
+      font-size: var(--step--1);
+      color: var(--mute);
+    }
+
+    /* What breaks sits on the caveat ground, ahead of the summary it is lifted
+     * from, because it is the part of a release a reader cannot skip. */
+    .breaks {
+      margin-block: 0.9rem;
+      padding: 0.9rem 1.1rem;
+      background: var(--brand-soft);
+      border-inline-start: 2px solid var(--brand);
+      border-radius: var(--radius);
+    }
+
+    .breaks .label {
+      margin-block-end: 0.5rem;
+    }
+
+    .breaks p {
+      margin-block: 0 0.6rem;
+    }
+
+    .breaks p:last-child {
+      margin-block-end: 0;
+    }
+
+    .removed-label {
+      font-weight: 600;
+    }
+
+    .breaks ul {
+      margin: 0;
+      padding-inline-start: 1.2rem;
+    }
+
+    .summary p {
+      color: var(--graphite);
+      margin-block: 0.8rem 0;
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 1.2rem;
+      font-size: var(--step--1);
+      margin-block-start: 0.9rem;
+    }
+  </style>
+</Page>

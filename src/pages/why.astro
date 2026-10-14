@@ -77,24 +77,25 @@ const untouched = SPELLED[rest] ?? String(rest);
 <Page
   kind="TechArticle"
   title="Why iyi"
-  summary={`iyi runs your Crystal code today and rebuilds it ${loop.claim.value}x faster. Developer experience, AI experience, portability, performance and efficiency: four things, one rule, every number measured.`}
+  summary={`iyi is a compiled language whose modules compile against their dependencies' declarations, never their bodies. That one rule is why a changed line rebuilds ${loop.claim.value}x faster than under Crystal's rules and why an agent grounds an edit in an interface instead of a repository. The compiler is Crystal's, so your Crystal code builds too. Every number here was measured.`}
 >
   <section class="hero">
     <div class="wrap">
       <p class="label">Why iyi</p>
-      <h1>Your Crystal code, rebuilt {loop.claim.value}x faster, with a compiler your agents can talk to.</h1>
+      <h1>Modules compile against declarations, never bodies. The rest follows.</h1>
       <p class="lede">
-        iyi is one design decision seen from four sides. A module compiles
+        iyi is a compiled language built on one rule: a module compiles
         against its dependencies' <strong>declarations</strong>, never their
-        bodies. So a build reads less, a program carries less, a tool can read
-        an interface without a repository, and a person waits less. Every
-        number on this page was measured by a gate in the repository, and the
-        ticked cards are the ones that came off a machine rather than out of
-        the tree.
+        bodies. So a changed line rebuilds {loop.claim.value}x faster than
+        under Crystal's rules, an agent grounds an edit in an interface instead
+        of a repository, and a program carries less. The compiler is Crystal's,
+        so your Crystal code builds today. Every number on this page was
+        measured by a gate in the repository, and the ticked cards are the ones
+        that came off a machine rather than out of the tree.
       </p>
       <div class="hero-cta">
         <a class="cta" href={`${base}playground/`}>Take the tour</a>
-        <a class="cta ghost" href={`${base}#crystal`}>Switch from Crystal</a>
+        <a class="cta ghost" href={`${base}docs/from-crystal/`}>Switch from Crystal</a>
       </div>
     </div>
   </section>

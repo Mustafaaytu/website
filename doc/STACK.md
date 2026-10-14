@@ -46,9 +46,20 @@ site/
     targets.mjs             reads the platforms out of iyi's CI workflow and the
                             run set out of README.md, writes generated/targets.json
     releases.mjs            reads CHANGELOG.md's release headings, writes
-                            generated/releases.json
+                            generated/releases.json; and at the release tag,
+                            each release's summary, the passages it marks as
+                            breaking and its entries' opening sentences, with
+                            SPEC.md IV.5, into generated/release-notes.json
     samples.mjs             transcludes samples/iyi, samples/tour, records/break
                             and records/agent into generated/samples/
+    tools.mjs               reads `iyi help`, each verb's own help, and passages
+                            of README.md, SPEC.md and the editors guides out of
+                            the release tag, writes generated/tools.json for
+                            /docs/tools/ and /docs/from-crystal/
+    benchmark.mjs           reads bench/context_pack.py, AI_FIRST.md §5 and the
+                            CI workflow at the release tag, writes
+                            generated/benchmark.json: the method and the runs
+                            behind /agents/benchmark/
     record-agent.mjs        recorder: runs the agent loop against a real
                             compiler, writes records/agent.json, and gates the
                             MCP-equals-shell claim by comparing both answers
@@ -60,7 +71,7 @@ site/
   src/
     styles/                 tokens.css, base.css, code.css
     components/             Measure, Stamped, DurationChart, Sample, Quote,
-                            Compare, Frame, Lifted
+                            Compare, Frame, Lifted, Passage, Usage
     layouts/Page.astro      masthead, colophon, fonts, styles, scheme switch
     pages/                  index, why, agents, playground, learn, install,
                             download, targets, project
@@ -118,19 +129,45 @@ The two classes of number are rendered differently by design; see
   tool gives over MCP stops matching the answer the same verb gives in a
   shell. The site had been making the last of those claims in prose, which
   nobody could check.
+- **Recorded, and held to the release whole:** the API reference at
+  `/docs/api/`. `scripts/record-api.mjs` runs `iyi doc` over every type
+  `iyi doc prelude` lists and every module under `src/std/` at the tag, and
+  keeps each command, exit code and output; a module the compiler refuses to
+  document is recorded with its refusal and its page prints that. The surface
+  is the compiler's reading of the library, so it cannot be checked file by
+  file: `scripts/records.mjs` refuses it unless it was recorded at the
+  release commit and covers exactly the modules the tag ships.
+  `scripts/record-highlight.mjs` sets each surface in the compiler's tokens,
+  keyed `iyi doc <name>`, so it runs after `record:api`. `scripts/api.mjs`
+  adds what a page needs on top: each entry's first sentence, quoted from its
+  own doc comment or its module file at the tag, and an anchor per declaration.
 - **Not published at all:** SPEC.md and CHANGELOG.md. The site used to cut
   them into 57 of its 128 routes, and nothing anywhere linked in: every rule
   citation on the site names a SPEC.md section and line as text. A design
   record marked Draft 0, whose Part III is open questions and whose Appendix B
   is decisions awaiting a call, is not documentation, and a reader who reached
   it from a search for how the language works got the wrong answer confidently.
-  Both files stay in the repository. `scripts/releases.mjs` reads the one thing
-  the site still needs from either: which release is current.
+  Both files stay in the repository. `scripts/releases.mjs` reads what the
+  site still needs from them: which release is current, and for `/releases/`
+  each release's own summary, what it marks as breaking and the opening
+  sentence of each entry, read at the tag and linked back to the lines they
+  came from, with SPEC.md's versioning rule quoted the same way.
 - **Generated, transcluded:** sample code in lessons, copied from
   `samples/iyi/` by `scripts/samples.mjs`, so a sample that changes in the
   repository changes on the site. Renaming a sample a lesson names fails the
   build.
 - **Generated, measured:** all numbers, via the pipeline above.
+- **Generated, for agents, as text:** `/llms.txt`, `/llms-full.txt` and each
+  lesson at `/learn/<slug>.md`. They are rendered from the data the pages
+  read, not from a copy of it: `src/lib/lesson-markdown.ts` writes a lesson
+  out in the page's order with every `Sample` resolved through the same
+  `src/lib/listing.ts` selection the component uses and every `Quote` and
+  recorded rejection out of its record, and refuses a component it does not
+  know. `/llms-full.txt` appends the rule table, every lesson, the tour's
+  programs with their recorded output and, when `records/api.json` is in the
+  tree, every recorded API surface. The MCP setup snippets on `/agents/` are
+  the one thing there that is not iyi's: the client syntax lives in
+  `src/lib/mcp.ts` with the client documentation each was checked against.
 - **Authored fresh:** the marketing pages and the lessons. SPEC.md is a design
   record, not teaching material, so the learning path is written by hand but is
   grounded in real samples and real README passages, and every factual claim in

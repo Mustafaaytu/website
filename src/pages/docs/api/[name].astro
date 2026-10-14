@@ -1,0 +1,262 @@
+---
+/**
+ * One prelude type or one std module, as `iyi doc` printed it at the release.
+ *
+ * The listing is the recording, whole: records/api.json holds the bytes the
+ * compiler printed, records/highlight.json holds the compiler's own lexer
+ * over those bytes, and scripts/records.mjs refuses a build where the second
+ * does not encode the first or the first is not of the release. Nothing on
+ * this page is a description of the API; the sentence under the heading is the
+ * source's own first sentence, quoted by scripts/api.mjs.
+ *
+ * WHAT IS ADDED is an id on each declaration line, and a contents list of
+ * those ids above the listing, so a method can be linked to: `#Set.add`. The
+ * ids are scripts/api.mjs's reading of the printed layout, and they touch a
+ * line's wrapper and never its tokens.
+ *
+ * A module the compiler would not document has no listing. Its page prints the
+ * compiler's own refusal instead, as every recorded refusal on this site is
+ * printed, because a reference that silently left it out would be smaller
+ * than the library it claims to cover.
+ */
+import Page from "../../../layouts/Page.astro";
+import api from "../../../generated/api.json";
+import { highlightedLines } from "../../../lib/highlight";
+import { renderRecording } from "../../../lib/recording";
+
+interface Member {
+  id: string;
+  label: string;
+}
+
+interface Group {
+  id: string | null;
+  label: string | null;
+  members: Member[];
+}
+
+interface Entry {
+  name: string;
+  slug: string;
+  kind: string;
+  path: string | null;
+  source: string | null;
+  command: string;
+  exitCode: number;
+  refusal: string | null;
+  summary: string | null;
+  lines: number;
+  anchors: Record<string, string>;
+  contents: Group[];
+}
+
+export function getStaticPaths() {
+  return [...api.prelude, ...api.std].map((entry) => ({
+    params: { name: entry.slug },
+    props: { entry },
+  }));
+}
+
+const entry = Astro.props.entry as unknown as Entry;
+const { provenance } = api;
+const base = import.meta.env.BASE_URL;
+const fragment = (id: string) => `#${encodeURIComponent(id)}`;
+
+const kind = entry.kind === "prelude" ? "prelude type" : "std module";
+/* The command as a reader would type it, for the listing's head. The recorded
+ * one names IYI_PATH as well, and is printed whole in the provenance below. */
+const shortCommand = `iyi doc ${entry.name}`;
+
+/* The surface, one balanced line of the compiler's tokens per printed line,
+ * with an id on every declaration. An id is HTML-safe by construction (see
+ * scripts/api.mjs), so it is written into the attribute as it is. */
+let listing: string | null = null;
+if (entry.refusal === null) {
+  const inked = highlightedLines(shortCommand);
+  if (inked.length < entry.lines) {
+    throw new Error(
+      `docs/api: records/highlight.json holds ${inked.length} lines for ` +
+        `"${shortCommand}" and records/api.json printed ${entry.lines}. The ` +
+        `two were recorded from different surfaces; regenerate with ` +
+        `npm run record:api && npm run record:highlight.`,
+    );
+  }
+  listing = inked
+    .slice(0, entry.lines)
+    .map((line, index) => {
+      const id = entry.anchors[String(index)];
+      return id === undefined ? line : `<span class="decl" id="${id}">${line}</span>`;
+    })
+    .join("\n");
+}
+
+const refusal =
+  entry.refusal === null ? null : renderRecording(`$ ${entry.command}\n${entry.refusal}`, "diagnostic");
+
+const contents = entry.contents.filter((group) => group.id !== null || group.members.length > 0);
+const plainSummary = entry.summary?.replace(/<[^>]*>/g, "").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+---
+
+<Page
+  kind="TechArticle"
+  title={`${entry.name}, API reference`}
+  summary={`${entry.name}, a ${kind} of iyi ${provenance.tag}, as iyi doc prints it.${plainSummary ? ` ${plainSummary}` : ""}`}
+>
+  <section class="wrap head">
+    <p class="label"><a href={`${base}docs/api/`}>API reference</a>, {kind}</p>
+    <h1><code>{entry.name}</code></h1>
+    {entry.summary !== null && <p class="lede" set:html={entry.summary} />}
+    {entry.source !== null && (
+      <p class="cite">
+        Source: <a href={entry.source}>{entry.path}</a> at {provenance.tag}.
+      </p>
+    )}
+  </section>
+
+  {contents.length > 0 && (
+    <nav class="wrap contents" aria-label={`Declarations in ${entry.name}`}>
+      <h2 class="label">Declarations</h2>
+      <ul class="groups">
+        {contents.map((group) => (
+          <li>
+            {group.id === null ? (
+              <span class="group">Top level</span>
+            ) : (
+              <a class="group" href={fragment(group.id)}><code>{group.label}</code></a>
+            )}
+            {group.members.length > 0 && (
+              <ul class="members">
+                {group.members.map((member) => (
+                  <li><a href={fragment(member.id)}><code>{member.label}</code></a></li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )}
+
+  <section class="wrap surface">
+    {listing !== null && (
+      <figure class="source">
+        <figcaption class="source-head">
+          <span class="path">{shortCommand}</span>
+          <span>{entry.lines} lines</span>
+        </figcaption>
+        <div class="scroll-x" role="region" tabindex="0" aria-label={`${shortCommand}, ${entry.lines} lines`}>
+          <pre><code set:html={listing} /></pre>
+        </div>
+      </figure>
+    )}
+    {refusal !== null && (
+      <>
+        <p class="sub">
+          The compiler does not print a surface for this module. This is what it
+          says instead.
+        </p>
+        <div class="diagnostic">
+          <div class="scroll-x" role="region" tabindex="0" aria-label={`What ${shortCommand} said`}>
+            <pre set:html={refusal} />
+          </div>
+        </div>
+      </>
+    )}
+    <p class="cite">
+      Recorded run of <code>{entry.command}</code>, exit code {entry.exitCode},{" "}
+      {provenance.compiler}, commit {provenance.commit.slice(0, 12)}, on{" "}
+      {provenance.machine}. Regenerate with <code>{provenance.command}</code>.
+    </p>
+  </section>
+
+  <style>
+    section,
+    nav {
+      padding-block: clamp(1rem, 2vw, 1.6rem);
+    }
+
+    .head {
+      padding-block-start: clamp(2.5rem, 5vw, 4rem);
+    }
+
+    .head h1 {
+      font-size: var(--step-3);
+      margin-block: 0.5rem 0.8rem;
+    }
+
+    .head h1 code {
+      font-size: inherit;
+      background: none;
+      border: 0;
+      padding: 0;
+    }
+
+    .lede,
+    .sub {
+      color: var(--graphite);
+      max-width: 66ch;
+    }
+
+    /* The provenance and the source link, in the evidence face. */
+    .cite {
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      color: var(--mute);
+      max-width: 72ch;
+    }
+
+    .cite code {
+      font-size: inherit;
+    }
+
+    .surface .cite {
+      margin-block-start: 0.9rem;
+    }
+
+    /* The contents: each type or impl, then its members, one link per name.
+     * An overload's later lines have ids of their own and are reached by
+     * reading on from the first. */
+    .contents h2 {
+      margin-block-end: 0.6rem;
+    }
+
+    .groups,
+    .members {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .groups > li {
+      padding-block: 0.35rem;
+      border-block-end: var(--hair) solid var(--hairline);
+    }
+
+    .group {
+      font-size: var(--step--1);
+    }
+
+    .members {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.15rem 0.9rem;
+      margin-block-start: 0.2rem;
+      font-size: var(--step--2);
+    }
+
+    .members code,
+    .group code {
+      font-size: inherit;
+    }
+
+    /* A declaration a link landed on. The line is marked in the brand's soft
+     * tint, never the signal, which this site keeps for a loss or a caveat. */
+    .surface :global(.decl) {
+      scroll-margin-block-start: 5rem;
+    }
+
+    .surface :global(.decl:target) {
+      background: var(--brand-soft);
+    }
+  </style>
+</Page>

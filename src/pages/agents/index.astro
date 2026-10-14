@@ -2,11 +2,12 @@
 /**
  * The agent claim, as a transcript.
  *
- * The site's first line says iyi is a language for people and their agents.
- * Every other claim here is measured or replayed; that one used to be four
+ * The site says an agent reads an interface instead of a repository. Every
+ * other claim here is measured or replayed; that one used to be four
  * paragraphs about verbs, and prose about a compiler is a claim about a
  * compiler rather than a reading of one. So this page shows the loop instead
- * of describing it, and shows nothing else.
+ * of describing it, then how to put the same server in front of a harness,
+ * and leaves the measurement's method to `/agents/benchmark/`.
  *
  * NOTHING ON THIS PAGE IS TYPED. Every command line is the argv
  * `scripts/record-agent.mjs` spawned, every body is the bytes that came back,
@@ -17,26 +18,35 @@
  * an interface, or when the answer over MCP stops matching the answer in a
  * shell. So a page that renders is a page whose frames still hold.
  *
+ * THE ONE THING HERE THAT IS NOT IYI'S is how each client is told to start
+ * the server. That syntax belongs to the client, so it lives in
+ * `src/lib/mcp.ts` with the official page each snippet was checked against
+ * cited beside it, and the page links that documentation under the snippet.
+ * The server's name and command are still the recording's.
+ *
  * IT IS SHORT ON PURPOSE. The first draft explained each frame twice, once
  * before it and once after, and carried a second copy of the suggested edit as
  * a field list beside the JSON that already contained it. A transcript that
  * needs a paragraph per line is not evidence, it is an argument with exhibits.
  * One sentence per frame, and the frame says the rest.
  */
-import Page from "../layouts/Page.astro";
-import Frame from "../components/Frame.astro";
-import Sample from "../components/Sample.astro";
-import Stamped from "../components/Stamped.astro";
-import Measure from "../components/Measure.astro";
-import facts from "../generated/facts.json";
-import record from "../../records/agent.json";
-import thesis from "../generated/thesis.json";
-import { SPELLED } from "../lib/lessons";
+import Page from "../../layouts/Page.astro";
+import Frame from "../../components/Frame.astro";
+import Sample from "../../components/Sample.astro";
+import Stamped from "../../components/Stamped.astro";
+import facts from "../../generated/facts.json";
+import record from "../../../records/agent.json";
+import thesis from "../../generated/thesis.json";
+import benchmark from "../../generated/benchmark.json";
+import { SPELLED } from "../../lib/lessons";
+import { escapeHtml, renderRecording } from "../../lib/recording";
+import { clients, generic, server } from "../../lib/mcp";
 
 const base = import.meta.env.BASE_URL;
 const pack = facts.recorded.context_pack;
 const provenance = record.recorded;
 const wire = record.wire;
+const commandLine = [server.command, ...server.args].join(" ");
 
 /** Which stream a verb answers on. JSON gives it as a string; the component
  * takes only these two, and a record naming a third is a record this page
@@ -308,15 +318,81 @@ if (!consumer) {
     </div>
   </section>
 
-  <section class="band">
+  <section class="band" id="connect">
+    <div class="wrap">
+      <h2>Connect a harness</h2>
+      <p class="sub">
+        <code>{commandLine}</code> is the whole server: a client starts it and
+        talks to it over stdio, and it answers to the name it gives itself in
+        the handshake, <code>{server.name}</code>. Below is how{" "}
+        {SPELLED[clients.length]} clients are told to start it, each in that
+        client's own syntax and checked
+        against its own documentation.
+      </p>
+      {/*
+        Verified on 2026-10-14 against https://code.claude.com/docs/en/mcp,
+        https://cursor.com/docs/mcp and https://developers.openai.com/codex/mcp.
+        The section of each page every snippet follows is noted beside it in
+        src/lib/mcp.ts, which also feeds llms.txt.
+      */}
+      <div class="clients">
+        {
+          [...clients, { name: "Any other client", doc: null, snippets: [generic] }].map((client) => (
+            <div class="client">
+              <h3>{client.name}</h3>
+              {client.snippets.map((snippet) => (
+                <div class="console">
+                  <div class="console-chrome">
+                    <i aria-hidden="true" />
+                    <i aria-hidden="true" />
+                    <i aria-hidden="true" />
+                    <span class="caption">{snippet.where}</span>
+                    <button
+                      type="button"
+                      class="copy"
+                      data-copy={snippet.text}
+                      aria-label={`Copy the ${snippet.lang === "sh" ? "command" : "configuration"} for ${client.name === "Any other client" ? "any other client" : client.name}`}
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <pre
+                    set:html={
+                      snippet.lang === "sh"
+                        ? renderRecording(snippet.text, "shell")
+                        : `<span class="out">${escapeHtml(snippet.text)}</span>`
+                    }
+                  />
+                </div>
+              ))}
+              {client.doc && (
+                <p class="doc">
+                  As <a href={client.doc}>{client.name}'s MCP documentation</a> sets it out.
+                </p>
+              )}
+            </div>
+          ))
+        }
+      </div>
+      <p class="sub run-it">
+        Each client starts <code>{server.command}</code> by name, so it has to
+        be on the <code>PATH</code> that client sees. Where it is not, write
+        the full path to the binary in its place.
+      </p>
+    </div>
+  </section>
+
+  <section>
     <div class="wrap">
       <h2>What it costs</h2>
       <p class="sub">
         On {SPELLED[record.project.length]} modules a pack is no smaller than
         the sources it stands in for. The saving is a property of scale, so it
-        is measured where scale exists: the repository's own{" "}
-        <Measure of="generated" />-line project of <Measure of="modules" />{" "}
-        modules, by a gate that runs both arms.
+        is measured on the import closures of{" "}
+        {benchmark.script.targets.map((target, i) => (
+          <>{i === 0 ? "" : i === benchmark.script.targets.length - 1 ? " and " : ", "}<code>{target.entry}</code></>
+        ))}{" "}
+        in the repository, by a gate with two arms.
       </p>
       <Stamped
         claim={`${pack.tokens_low} to ${pack.tokens_high}% fewer prompt tokens, for no fewer rounds.`}
@@ -330,10 +406,12 @@ if (!consumer) {
         </p>
       </Stamped>
       <p class="sub run-it">
-        The project is <code>records/agent/</code> in this site's repository and
-        the commands are the ones above.{" "}
-        <a href={`${base}install/`}>Install the compiler</a> and the frames on
-        this page are what you will see.
+        <a href={`${base}agents/benchmark/`}>How it is measured</a>: the
+        targets, what counts as green, the bar the gate holds the pack to, and
+        the runs trial by trial. The project above is{" "}
+        <code>records/agent/</code> in this site's repository and the commands
+        are the ones above. <a href={`${base}install/`}>Install the compiler</a>{" "}
+        and the frames on this page are what you will see.
       </p>
     </div>
   </section>
@@ -488,5 +566,44 @@ if (!consumer) {
       margin-block-start: 1.6rem;
       margin-block-end: 0;
     }
+
+    /* The clients side by side where there is room. Each is a heading, the
+     * snippets it takes and the page they were checked against, so a reader
+     * finds their own client by name and copies one block. */
+    .clients {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+      gap: 1.6rem 1.25rem;
+      align-items: start;
+    }
+
+    .client {
+      display: grid;
+      gap: 0.7rem;
+    }
+
+    .client .console {
+      margin: 0;
+    }
+
+    /* A console block wraps anywhere, which is right for a recording and
+     * wrong for a command a reader copies by eye: `-- iyi mcp` broken after
+     * its first dash reads as two options. These scroll instead. */
+    .client .console pre {
+      white-space: pre;
+      overflow-wrap: normal;
+      overflow-x: auto;
+    }
+
+    .client .doc {
+      color: var(--graphite);
+      font-size: var(--step--1);
+      margin: 0;
+    }
   </style>
+
+  <script>
+    import { wireCopyButtons } from "../../lib/copy";
+    wireCopyButtons();
+  </script>
 </Page>

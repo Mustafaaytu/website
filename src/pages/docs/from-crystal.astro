@@ -1,0 +1,326 @@
+---
+/**
+ * iyi for a reader who already writes Crystal, or Ruby.
+ *
+ * The README has the whole account: what carries over, the table of what
+ * moved and the rule behind each move, `--crystal` for a program that wants
+ * Crystal's library and shards, and `iyi migrate` and `iyi bind` for a project
+ * that already exists. This page puts those passages in one place, each one
+ * quoted by scripts/tools.mjs out of the iyi tree at the release tag with the
+ * lines it came from, and the table through `Compare`, which quotes it out of
+ * README.md the way the home page does. SPEC.md's sentence that Ruby syntax is
+ * kept is what puts Ruby in the title.
+ *
+ * The last section ties the table to the lessons by the rule identifiers
+ * both of them name: a row whose reason cites a rule a lesson teaches is set
+ * beside that lesson. The lesson list is the collection's own sequence, so a
+ * lesson added to /learn/ appears here without an edit.
+ */
+import Page from "../../layouts/Page.astro";
+import Compare from "../../components/Compare.astro";
+import Lifted from "../../components/Lifted.astro";
+import Passage from "../../components/Passage.astro";
+import Usage from "../../components/Usage.astro";
+import tables from "../../generated/tables.json";
+import tools from "../../generated/tools.json";
+import { inlineMarkdown, lessonHref, sequence } from "../../lib/lessons";
+import { latestRelease, releaseUrl } from "../../lib/release";
+
+const base = import.meta.env.BASE_URL;
+const release = latestRelease();
+
+if (tools.provenance.release !== release.version) {
+  throw new Error(
+    `docs/from-crystal: scripts/tools.mjs read the tree at ${tools.provenance.tag} ` +
+      `and releases.json says ${release.version} is current. Run npm run generate.`,
+  );
+}
+
+type Help = { text: string; caption: string; cite: string; url: string };
+const help = (verb: string) => {
+  const found = (tools.verbs as Record<string, { help: Help }>)[verb];
+  if (!found) throw new Error(`docs/from-crystal: scripts/tools.mjs reads no help for \`${verb}\``);
+  const { text, caption, cite, url } = found.help;
+  return { text, caption, cite, href: url };
+};
+
+/* The rule identifiers a cell names: `R-1`, `R-2b`, `II.6`, `III.6`. The
+ * same shapes a lesson's `rule` is written in (src/content.config.ts). */
+const RULE = /\bR-\d+[a-z]?\b|\b[IVX]+\.\d+(?:\.\d+)?\b/g;
+
+const rows = tables.crystal.rows.map((row) => ({
+  crystal: row[0],
+  rules: new Set(row[row.length - 1].match(RULE) ?? []),
+}));
+
+const lessons = (await sequence()).map((lesson) => {
+  const rules = lesson.data.rule.split(/\s+/);
+  return {
+    lesson,
+    rules,
+    rows: rows.filter((row) => rules.some((rule) => row.rules.has(rule))),
+  };
+});
+
+const steps = [
+  { id: "kept", title: "What carries over" },
+  { id: "moved", title: "What moved" },
+  { id: "traits", title: "No open classes" },
+  { id: "crystal-library", title: "Crystal's library, and your shards" },
+  { id: "migrate", title: "Bring a project across" },
+  { id: "bind", title: "Put the shards behind a boundary" },
+  { id: "questions", title: "Questions" },
+  { id: "lessons", title: "The rules, one lesson each" },
+];
+
+const title = (id: string): string => {
+  const step = steps.find((candidate) => candidate.id === id);
+  if (!step) throw new Error(`docs/from-crystal: no step "${id}" in the contents`);
+  return step.title;
+};
+---
+
+<Page
+  kind="TechArticle"
+  title="iyi for Crystal and Ruby programmers"
+  summary={`What carries over from Crystal, what moved and the rule behind each move, --crystal for Crystal's library and shards, and iyi migrate and iyi bind for a project you already have. Quoted from the iyi repository at ${tools.provenance.tag}.`}
+>
+  <section class="wrap head">
+    <p class="label">
+      <a href={`${base}docs/`}>Docs</a>, from Crystal, <a href={releaseUrl(release)}>version {release.version}</a>
+    </p>
+    <h1>iyi for Crystal and Ruby programmers.</h1>
+    <p class="lede">
+      What carries over unchanged, what moved and the rule behind each move,
+      and the two verbs that bring a project and its shards across. Every
+      passage is the repository's own, quoted from release {release.version}{" "}
+      with the file and lines it came from.
+    </p>
+    <nav class="contents" aria-label="On this page">
+      <ol>
+        {steps.map((step) => (
+          <li>
+            <a href={`#${step.id}`}>{step.title}</a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  </section>
+
+  <section class="wrap step" id="kept">
+    <h2>{title("kept")}</h2>
+    <Passage id="kept" />
+    <Passage id="compatible" />
+  </section>
+
+  <section class="wrap step" id="moved">
+    <h2>{title("moved")}</h2>
+    <Passage id="moved" />
+    <div class="table">
+      <Compare id="crystal" caption="Crystal, iyi, and why" />
+    </div>
+    <Passage id="cr_files" />
+  </section>
+
+  <section class="wrap step" id="traits">
+    <h2>{title("traits")}</h2>
+    <Passage id="traits" />
+  </section>
+
+  <section class="wrap step" id="crystal-library">
+    <h2>{title("crystal-library")}</h2>
+    <Usage switches={["--crystal"]} />
+    <Lifted
+      text={tools.usage.note.text}
+      caption={`${tools.programName} help, its last paragraph`}
+      cite={tools.usage.note.cite}
+      href={tools.usage.note.url}
+    />
+    <Passage id="library" />
+    <Passage id="unchanged" />
+    <Passage id="bang" />
+    <Passage id="cost" />
+  </section>
+
+  <section class="wrap step" id="migrate">
+    <h2>{title("migrate")}</h2>
+    <Usage commands={["migrate"]} />
+    <Passage id="migrate" />
+    <Lifted {...help("migrate")} />
+  </section>
+
+  <section class="wrap step" id="bind">
+    <h2>{title("bind")}</h2>
+    <Usage commands={["bind"]} />
+    <Lifted {...help("bind")} />
+  </section>
+
+  <section class="wrap step" id="questions">
+    <h2>{title("questions")}</h2>
+    <Passage id="flag" />
+    <Passage id="shards" />
+    <Passage id="stable" />
+  </section>
+
+  <section class="wrap step" id="lessons">
+    <h2>{title("lessons")}</h2>
+    <p class="sub">
+      Each lesson teaches one rule, in order. Where a row of the table above
+      cites that rule, the row's Crystal side is set beside it.
+    </p>
+    <ol class="lessons">
+      {lessons.map(({ lesson, rules, rows: cited }) => (
+        <li>
+          <p class="lesson-head">
+            <a href={lessonHref(base, lesson)}>{lesson.data.title}</a>{" "}
+            <span class="rule">{rules.join(" ")}</span>
+          </p>
+          <p class="summary" set:html={inlineMarkdown(lesson.data.summary)} />
+          {cited.length > 0 && (
+            <ul class="rows">
+              {cited.map((row) => (
+                <li>
+                  <span class="was">In Crystal:</span> <span set:html={inlineMarkdown(row.crystal)} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="wrap step next">
+    <h2>Then</h2>
+    <div class="hero-cta">
+      <a class="cta" href={`${base}learn/`}>Learn the rules</a>
+      <a class="cta ghost" href={`${base}playground/`}>Take the tour</a>
+      <a class="cta ghost" href={`${base}docs/tools/`}>The tools</a>
+      <a class="cta ghost" href={`${base}install/`}>Install</a>
+    </div>
+    <dl class="evidence">
+      <dt>read by</dt>
+      <dd>
+        {tools.provenance.generator} from {tools.provenance.repository} at{" "}
+        {tools.provenance.tag}, {tools.provenance.commit.slice(0, 9)}; the
+        table by scripts/samples.mjs, {tables.crystal.cite}
+      </dd>
+    </dl>
+  </section>
+
+  <style>
+    section {
+      padding-block: clamp(1.2rem, 2.5vw, 2rem);
+    }
+
+    .head {
+      padding-block-start: clamp(2.5rem, 5vw, 4rem);
+    }
+
+    .head h1 {
+      font-size: var(--step-4);
+      margin-block: 0.5rem 0.8rem;
+    }
+
+    .lede {
+      color: var(--graphite);
+      max-width: 60ch;
+      margin-block-end: 1.2rem;
+    }
+
+    .contents ol {
+      margin: 0;
+      padding-inline-start: 1.4em;
+      columns: 2 14rem;
+      column-gap: 2rem;
+      color: var(--mute);
+    }
+
+    .contents li {
+      margin-block-end: 0.3rem;
+      break-inside: avoid;
+    }
+
+    .step {
+      scroll-margin-top: 4rem;
+    }
+
+    h2 {
+      font-size: var(--step-2);
+      margin-block-end: 0.8rem;
+    }
+
+    .sub {
+      color: var(--graphite);
+      max-width: 62ch;
+      margin-block: 0 1rem;
+    }
+
+    .table {
+      margin-block: 0 1.6rem;
+      max-width: 62rem;
+    }
+
+    .step :global(.lifted) {
+      max-width: 62rem;
+    }
+
+    .lessons {
+      margin: 0;
+      padding-inline-start: 1.4em;
+      display: grid;
+      gap: 1.1rem;
+      max-width: 62ch;
+    }
+
+    .lesson-head {
+      margin: 0 0 0.2rem;
+      font-weight: 600;
+    }
+
+    .rule {
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      color: var(--mute);
+      font-weight: 500;
+      margin-inline-start: 0.4rem;
+    }
+
+    .summary {
+      margin: 0;
+      color: var(--graphite);
+    }
+
+    .rows {
+      list-style: none;
+      margin: 0.4rem 0 0;
+      padding: 0;
+      font-size: var(--step--1);
+      color: var(--graphite);
+    }
+
+    .rows :global(code) {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .was {
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      color: var(--mute);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      margin-block-end: 1.5rem;
+    }
+
+    .next {
+      padding-block-end: 3rem;
+    }
+  </style>
+</Page>

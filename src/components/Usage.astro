@@ -1,0 +1,115 @@
+---
+/**
+ * Lines of `iyi help`, by the name each one starts with.
+ *
+ * The command list and the switch list are the USAGE heredoc in
+ * `src/compiler/iyi.cr` at the release tag, read by scripts/tools.mjs with the
+ * line each entry sits at. A page names the verbs a step is about and this
+ * sets their lines exactly as the compiler prints them, so the one-line
+ * account of a command on the site is the compiler's own and cannot drift
+ * from it. A name the help does not list fails the build here.
+ */
+import tools from "../generated/tools.json";
+import { inlineMarkdown } from "../lib/lessons";
+
+interface Props {
+  commands?: string[];
+  switches?: string[];
+}
+
+const { commands = [], switches = [] } = Astro.props;
+
+type Entry = { name: string; text: string; line: number };
+
+/* A command is printed after the program name, because that is how it is
+ * typed; a switch is printed as the switch. */
+const pick = (names: string[], from: Entry[], kind: string, label: (name: string) => string) =>
+  names.map((name) => {
+    const entry = from.find((candidate) => candidate.name === name);
+    if (!entry) {
+      throw new Error(
+        `Usage: \`iyi help\` (${tools.usage.cite}) lists no ${kind} "${name}". ` +
+          `It lists ${from.map((candidate) => candidate.name).join(", ")}.`,
+      );
+    }
+    return { ...entry, label: label(name) };
+  });
+
+const entries = [
+  ...pick(commands, tools.usage.commands, "command", (name) => `${tools.programName} ${name}`),
+  ...pick(switches, tools.usage.switches, "switch", (name) => name),
+];
+
+if (entries.length === 0) {
+  throw new Error("Usage: name at least one command or switch of `iyi help` to set");
+}
+
+const lines = entries.map((entry) => entry.line).sort((a, b) => a - b);
+const where = lines.length === 1 ? `line ${lines[0]}` : `lines ${lines.join(", ")}`;
+---
+
+<figure class="usage">
+  <dl>
+    {
+      entries.map((entry) => (
+        <>
+          <dt>
+            <code>{entry.label}</code>
+          </dt>
+          <dd set:html={inlineMarkdown(entry.text)} />
+        </>
+      ))
+    }
+  </dl>
+  <figcaption>
+    As <code>{tools.programName} help</code> prints it, from{" "}
+    <a href={tools.usage.url}>{tools.usage.file}</a>, {where}.
+  </figcaption>
+</figure>
+
+<style>
+  .usage {
+    margin: 0 0 1.2rem;
+    max-width: 62rem;
+  }
+
+  dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.45rem 1rem;
+    align-items: baseline;
+  }
+
+  dt {
+    margin: 0;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--graphite);
+  }
+
+  dd :global(code) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  @media (max-width: 36rem) {
+    dl {
+      grid-template-columns: 1fr;
+      gap: 0.1rem;
+    }
+
+    dd {
+      margin-block-end: 0.5rem;
+    }
+  }
+
+  figcaption {
+    margin-block-start: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: var(--step--2);
+    color: var(--mute);
+  }
+</style>

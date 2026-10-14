@@ -1,0 +1,251 @@
+---
+/**
+ * One release: its summary, what it breaks, and every change it records.
+ *
+ * What this page adds over /releases/ is the last part. A release section of
+ * CHANGELOG.md runs to hundreds of entries and thousands of lines; each entry
+ * opens on a sentence that is the change in one line, and the rest is how it
+ * was found and what holds it. So the list here is those opening sentences,
+ * under the changelog's own headings, and each heading links to where its
+ * entries go on in full. `scripts/releases.mjs` lifts them; nothing on this
+ * page is written about a release, only out of one.
+ */
+import Page from "../../layouts/Page.astro";
+import {
+  REMOVED,
+  releaseHref,
+  releaseNotes,
+  whatBreaks,
+  type ReleaseNotes,
+} from "../../lib/release-notes";
+
+export function getStaticPaths() {
+  return releaseNotes.map((release, index) => ({
+    params: { version: release.version },
+    props: { release, newer: releaseNotes[index - 1], older: releaseNotes[index + 1] },
+  }));
+}
+
+interface Props {
+  release: ReleaseNotes;
+  newer?: ReleaseNotes;
+  older?: ReleaseNotes;
+}
+
+const { release, newer, older } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const breaks = whatBreaks(release);
+const sections = release.sections.filter((section) => section.title !== REMOVED);
+const changes = release.sections.reduce((n, section) => n + section.items.length, 0);
+---
+
+<Page
+  kind="TechArticle"
+  title={`iyi ${release.version}`}
+  summary={`iyi ${release.version}, released ${release.date}: its summary out of CHANGELOG.md, what it breaks, and the ${changes} changes it records, each by its opening sentence.`}
+>
+  <section class="wrap head">
+    <p class="label">
+      <a href={`${base}releases/`}>Releases</a>, <time datetime={release.date}>{release.date}</time>
+    </p>
+    <h1>iyi {release.version}</h1>
+    <div class="summary">
+      {release.summary.map((paragraph) => <p set:html={paragraph} />)}
+    </div>
+    <p class="links">
+      <a href={release.url}>The section in CHANGELOG.md</a>
+      <a href={release.tag}>The release on GitHub</a>
+    </p>
+  </section>
+
+  {
+    (breaks.marked.length > 0 || breaks.removed.length > 0) && (
+      <section class="wrap">
+        <div class="breaks">
+          <h2>What breaks</h2>
+          {breaks.marked.map((passage) => (
+            <p set:html={passage} />
+          ))}
+          {breaks.removed.length > 0 && (
+            <>
+              <h3>Removed</h3>
+              <ul>
+                {breaks.removed.map((item) => (
+                  <li set:html={item} />
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      </section>
+    )
+  }
+
+  <section class="wrap">
+    <p class="sub">
+      Each line is the sentence an entry opens with, as the changelog writes
+      it. The entry goes on in CHANGELOG.md, under the heading linked beside
+      its group.
+    </p>
+    {
+      sections.map((section) => (
+        <div class="group">
+          <header>
+            <h2 set:html={section.title} />
+            <a href={section.url}>in CHANGELOG.md</a>
+          </header>
+          {section.items.length > 0 ? (
+            <ul class="changes">
+              {section.items.map((item) => (
+                <li set:html={item} />
+              ))}
+            </ul>
+          ) : (
+            <p class="empty">No entries under this heading; it reads in full in the changelog.</p>
+          )}
+        </div>
+      ))
+    }
+  </section>
+
+  <section class="wrap next">
+    <nav class="sequence" aria-label="Other releases">
+      {newer && <a href={releaseHref(base, newer)}>Newer: {newer.version}</a>}
+      <a href={`${base}releases/`}>Every release</a>
+      {older && <a href={releaseHref(base, older)}>Older: {older.version}</a>}
+    </nav>
+  </section>
+
+  <style>
+    section {
+      padding-block: clamp(1.2rem, 2.5vw, 2rem);
+    }
+
+    .head {
+      padding-block-start: clamp(2.5rem, 5vw, 4rem);
+    }
+
+    .head .label a {
+      color: inherit;
+    }
+
+    .head h1 {
+      font-size: var(--step-4);
+      margin-block: 0.5rem 0.8rem;
+    }
+
+    .summary {
+      max-width: 68ch;
+    }
+
+    .summary p {
+      color: var(--graphite);
+      margin-block: 0.8rem 0;
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 1.2rem;
+      font-size: var(--step--1);
+      margin-block-start: 1rem;
+    }
+
+    /* The caveat ground, as on /releases/: the part of a release a reader
+     * cannot skip. */
+    .breaks {
+      max-width: 72ch;
+      padding: 1rem 1.2rem;
+      background: var(--brand-soft);
+      border-inline-start: 2px solid var(--brand);
+      border-radius: var(--radius);
+    }
+
+    .breaks h2 {
+      font-size: var(--step-1);
+      margin-block: 0 0.6rem;
+    }
+
+    .breaks h3 {
+      font-size: var(--step-0);
+      margin-block: 0.9rem 0.4rem;
+    }
+
+    .breaks p {
+      margin-block: 0 0.6rem;
+    }
+
+    .breaks ul {
+      margin: 0;
+      padding-inline-start: 1.2rem;
+    }
+
+    .sub {
+      color: var(--graphite);
+      max-width: 62ch;
+      margin-block-end: 1.2rem;
+    }
+
+    .group + .group {
+      margin-block-start: clamp(1.5rem, 3vw, 2.2rem);
+    }
+
+    .group header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.2rem 1rem;
+      margin-block-end: 0.6rem;
+    }
+
+    .group h2 {
+      font-size: var(--step-2);
+      margin: 0;
+    }
+
+    .group header a {
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      color: var(--mute);
+    }
+
+    .changes {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-width: 72ch;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .changes li {
+      padding-block-end: 0.45rem;
+      border-block-end: var(--hair) solid var(--hairline);
+      color: var(--graphite);
+    }
+
+    .changes li:last-child {
+      border-block-end: 0;
+    }
+
+    .changes :global(strong) {
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    .empty {
+      color: var(--mute);
+      font-size: var(--step--1);
+    }
+
+    .next {
+      padding-block-end: 3rem;
+    }
+
+    .sequence {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem 1.4rem;
+    }
+  </style>
+</Page>

@@ -28,7 +28,7 @@
     { "match": "/targets/", "ceiling": 196608 },
     { "match": "/download/", "ceiling": 196608 },
     { "match": "/agents/", "ceiling": 212992 },
-    { "match": "/", "ceiling": 278528 },
+    { "match": "/", "ceiling": 245760 },
     { "match": "/404.html", "ceiling": 212992 },
     { "match": "/why/", "ceiling": 229376 },
     { "match": "/install/", "ceiling": 196608 },
@@ -36,7 +36,17 @@
     { "match": "/learn/*/", "ceiling": 212992 },
     { "match": "/playground/", "ceiling": 196608 },
     { "match": "/playground/iyi/*/", "ceiling": 229376 },
-    { "match": "/playground/*/", "ceiling": 294912 }
+    { "match": "/playground/*/", "ceiling": 294912 },
+    { "match": "/agents/benchmark/", "ceiling": 212992 },
+    { "match": "/community/", "ceiling": 196608 },
+    { "match": "/docs/", "ceiling": 196608 },
+    { "match": "/docs/tools/", "ceiling": 245760 },
+    { "match": "/docs/from-crystal/", "ceiling": 229376 },
+    { "match": "/docs/api/", "ceiling": 212992 },
+    { "match": "/docs/api/std-int/", "ceiling": 720896 },
+    { "match": "/docs/api/*/", "ceiling": 278528 },
+    { "match": "/releases/", "ceiling": 262144 },
+    { "match": "/releases/*/", "ceiling": 294912 }
   ],
-  "assets": 589824
+  "assets": 557056
 }

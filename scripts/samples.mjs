@@ -225,6 +225,12 @@ function fencedBlocks(lines) {
 // matched, never the line number, because a line number is a guess about a file
 // nobody edits with the site in mind.
 const WANTED = {
+  // README.md's first module and the file that imports it, the two listings
+  // the_rule's session builds. The home page's first screen sets all three
+  // together, because they are the repository's own demonstration of the one
+  // rule, and quoting them is what keeps that screen from being a paraphrase.
+  first_module: { lang: "crystal", anchor: '"Hello, #{name}."' },
+  first_import: { lang: "crystal", anchor: 'puts polite("world")' },
   first_run: { lang: "console", anchor: "$ iyi run main.iyi" },
   the_rule: { lang: "console", anchor: "rm -r app" },
   library_deleted: { lang: "console", anchor: "rm -rf samples/iyi/kemal" },

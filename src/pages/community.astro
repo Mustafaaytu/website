@@ -1,0 +1,379 @@
+---
+/**
+ * Who makes iyi, where to reach them, and what has grown up around it.
+ *
+ * Everything on this page is out of src/generated/community.json, which
+ * scripts/community.mjs reads from the release tag and the history behind it:
+ * the passages are quoted by anchor with their lines, the people are the
+ * authors of the fork's commits, and the editors and the package directory
+ * are the ones the repository itself names. The page lists what exists and
+ * nothing else; a channel the repository does not name is not on it.
+ *
+ * The fork's people and Crystal's are counted apart and never added together,
+ * for the reason the generator gives at its top.
+ */
+import Page from "../layouts/Page.astro";
+import community from "../generated/community.json";
+import project from "../generated/project.json";
+
+const base = import.meta.env.BASE_URL;
+const { history, contributors, release, repository, security, editors, packages, licence } = community;
+
+/* The four project documents by file, so a link here is the /project/ page
+ * that publishes that file, under the title the file gives itself. */
+const doc = (file: string) => {
+  const found = project.documents.find((entry) => entry.file === file);
+  if (!found) {
+    throw new Error(
+      `community: src/generated/project.json publishes no ${file}, so this page ` +
+        `has nowhere on the site to send a reader for it.`,
+    );
+  }
+  return { href: `${base}project/${found.id}/`, title: found.title, file: found.file };
+};
+
+const contributing = doc("CONTRIBUTING.md");
+const securityDoc = doc("SECURITY.md");
+const conduct = doc("CODE_OF_CONDUCT.md");
+const notice = doc("NOTICE.md");
+
+const count = (n: number) => n.toLocaleString("en-GB");
+const plural = (n: number, one: string, many: string) => `${count(n)} ${n === 1 ? one : many}`;
+---
+
+<Page
+  title="Community"
+  summary={`Where to raise an issue, propose a change or report a vulnerability in iyi, the ${plural(history.people, "person", "people")} who wrote its ${count(history.commits)} commits since it forked from Crystal, and the package directory, editor plugins and licence around it.`}
+>
+  <section class="wrap head">
+    <p class="label">Community</p>
+    <h1>Who makes iyi, and where to reach them.</h1>
+    <p class="lede">
+      {plural(history.people, "person has", "people have")} written the{" "}
+      {count(history.commits)} commits between the fork from Crystal on{" "}
+      <time datetime={history.first.date}>{history.first.date}</time> and {release.version}. Reaching the project means
+      its repository: its issues, its pull requests, and a private advisory
+      for anything sensitive. Everything on this page is read out of the
+      repository at {community.provenance.release}.
+    </p>
+    <ul class="doors">
+      <li><a href={repository.issues}>Issues</a></li>
+      <li><a href={repository.pulls}>Pull requests</a></li>
+      <li><a href={repository.advisory}>Report a vulnerability</a></li>
+      <li><a href={repository.url}>The repository</a></li>
+    </ul>
+  </section>
+
+  <section class="wrap">
+    <h2>Issues and changes</h2>
+    <p class="sub">What the tracker is for, in the words of {contributing.file}:</p>
+    <blockquote class="passage">
+      <p set:html={community.scope.html} />
+      <cite><a href={community.scope.url}>{community.scope.cite}</a></cite>
+    </blockquote>
+    <p class="sub">What a change to the repository is expected to come with:</p>
+    <ul class="expects">
+      {community.expects.map((lead) => (
+        <li>
+          <span set:html={lead.html} />{" "}
+          <a class="line" href={lead.url}>{lead.cite}</a>
+        </li>
+      ))}
+    </ul>
+    <p class="sub">
+      Each leads a paragraph of{" "}
+      <a href={contributing.href}>{contributing.title}</a>, which is published
+      here whole.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>Security reports</h2>
+    <p class="sub">Two places, depending on whose code the hole is in:</p>
+    <blockquote class="passage">
+      <p set:html={security.upstream.html} />
+      <cite><a href={security.upstream.url}>{security.upstream.cite}</a></cite>
+    </blockquote>
+    <blockquote class="passage">
+      <p set:html={security.fork.html} />
+      <cite><a href={security.fork.url}>{security.fork.cite}</a></cite>
+    </blockquote>
+    <p class="sub">
+      <a href={repository.advisory}>Open a private advisory</a>, or read{" "}
+      <a href={securityDoc.href}>{securityDoc.title}</a> whole.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>Conduct</h2>
+    <p class="sub">
+      The repository keeps the <a href={conduct.href}>{conduct.title}</a>,
+      published here verbatim.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>Who makes it</h2>
+    <div class="scroll-x" role="region" tabindex="0" aria-label="The authors of iyi's commits">
+      <table class="people">
+        <thead>
+          <tr>
+            <th scope="col">author</th>
+            <th scope="col">commits</th>
+            <th scope="col">first release</th>
+            <th scope="col">latest release</th>
+          </tr>
+        </thead>
+        <tbody>
+          {contributors.map((person) => (
+            <tr>
+              <th scope="row">
+                {person.name}{" "}
+                {person.aliases.length > 0 && (
+                  <span class="aliases">also committed as {person.aliases.join(", ")}</span>
+                )}
+              </th>
+              <td class="num">{count(person.commits)}</td>
+              <td>{person.since}</td>
+              <td>{person.latest}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <p class="sub">
+      Every commit from the fork's first, {history.first.commit}, to{" "}
+      {community.provenance.release}, merges not counted. One person under two
+      names is one row: authors are merged by email, after the release's own
+      .mailmap. A release is the first tag a commit shipped in, of the{" "}
+      {history.releases} from {history.firstRelease} to {release.version} on
+      the <a href={`${base}releases/`}>releases page</a>.
+    </p>
+    <p class="sub">
+      Underneath is Crystal: {count(history.crystal.commits)} commits by{" "}
+      {count(history.crystal.people)} people up to {history.fork}, the commit
+      iyi forked from. They are counted here and not listed, because they made{" "}
+      <a href={history.crystal.url}>Crystal</a>, and iyi is built on it.
+    </p>
+  </section>
+
+  <section class="wrap">
+    <h2>Around it</h2>
+    <div class="cols">
+      <div>
+        <h3>Packages</h3>
+        <blockquote class="passage">
+          <p set:html={packages.html} />
+          <cite><a href={packages.url}>{packages.cite}</a></cite>
+        </blockquote>
+        <p class="sub"><a href={packages.directory}>Browse iyipacks</a></p>
+      </div>
+      <div>
+        <h3>Editors</h3>
+        <p class="sub">
+          The extension <code>{editors.extension.id}</code> is on{" "}
+          {editors.extension.registries.map((registry, index) => (
+            <Fragment>
+              {index > 0 && (index === editors.extension.registries.length - 1 ? " and " : ", ")}
+              <a href={registry.url}>{registry.label}</a>
+            </Fragment>
+          ))}{" "}
+          (<a href={editors.extension.citeUrl}>{editors.extension.cite}</a>).
+          The <a href={editors.guide}>editors guide</a> has a section for each
+          of these:
+        </p>
+        <ul class="sections">
+          {editors.sections.map((section) => (
+            <li><a href={section.url}>{section.title}</a></li>
+          ))}
+        </ul>
+        <p class="sub">
+          The rest of the tooling is under <a href={`${base}docs/tools/`}>Tools</a>.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>Licence</h2>
+    <blockquote class="passage">
+      <p set:html={licence.html} />
+      <cite><a href={licence.url}>{licence.cite}</a></cite>
+    </blockquote>
+    <p class="sub">
+      The text is the <a href={licence.licence}>{licence.name}</a>; what the
+      compiler links and whose copyright each part is, is in{" "}
+      <a href={notice.href}>{notice.file}</a>.
+    </p>
+  </section>
+
+  <section class="wrap next">
+    <h2>Elsewhere</h2>
+    <ul class="links">
+      <li><a href={`${base}project/`}>The project's own documents, published whole</a></li>
+      <li><a href={`${base}releases/`}>Every release, and what changed in it</a></li>
+      <li><a href={`${base}docs/`}>The documentation</a></li>
+      <li><a href={repository.url}>The repository</a></li>
+    </ul>
+  </section>
+
+  <style>
+    section {
+      padding-block: clamp(1.2rem, 2.5vw, 2rem);
+    }
+
+    /* An ISO date breaks at its hyphens, and 2026-08- at a line end reads as
+     * a date with no day. */
+    time {
+      white-space: nowrap;
+    }
+
+    .head {
+      padding-block-start: clamp(2.5rem, 5vw, 4rem);
+    }
+
+    .head h1 {
+      font-size: var(--step-4);
+      margin-block: 0.5rem 0.8rem;
+    }
+
+    .lede,
+    .sub {
+      color: var(--graphite);
+      max-width: 62ch;
+    }
+
+    h2 {
+      font-size: var(--step-1);
+      margin-block-end: 0.6rem;
+    }
+
+    h3 {
+      font-size: var(--step-0);
+      margin-block: 0 0.5rem;
+    }
+
+    .doors {
+      list-style: none;
+      margin: 1.2rem 0 0;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
+    .doors a {
+      display: inline-block;
+      padding: 0.45rem 0.9rem;
+      border: var(--hair) solid var(--hairline);
+      border-radius: 2px;
+      background: var(--raise);
+      color: inherit;
+    }
+
+    .doors a:hover {
+      border-color: var(--graphite);
+      text-decoration: none;
+    }
+
+    /* A passage of the repository, set as a quotation with its lines under
+     * it. The citation is in the evidence face, as on /project/. */
+    .passage {
+      margin: 0.8rem 0 1rem;
+      padding: 0.1rem 0 0.1rem 1.1rem;
+      border-inline-start: 2px solid var(--hairline);
+      max-width: 62ch;
+    }
+
+    .passage p {
+      margin: 0 0 0.4rem;
+    }
+
+    .passage cite,
+    .line {
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      font-style: normal;
+      color: var(--mute);
+    }
+
+    .expects {
+      margin: 0.4rem 0 1rem;
+      padding-inline-start: 1.3em;
+      max-width: 62ch;
+    }
+
+    .expects li {
+      margin-block-end: 0.35rem;
+    }
+
+    .people {
+      border-collapse: collapse;
+      font-size: var(--step--1);
+      color: var(--graphite);
+      margin-block-end: 1rem;
+    }
+
+    .people thead th {
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--mute);
+      text-align: start;
+      padding-block-end: 0.4rem;
+      border-block-end: var(--hair) solid var(--hairline);
+      white-space: nowrap;
+    }
+
+    .people td,
+    .people tbody th {
+      text-align: start;
+      font-weight: 500;
+      padding-block: 0.5rem;
+      padding-inline-end: 1.4rem;
+      border-block-end: var(--hair) solid var(--hairline);
+      vertical-align: top;
+    }
+
+    .people td {
+      font-weight: 400;
+    }
+
+    .people .num {
+      font-variant-numeric: tabular-nums;
+      text-align: end;
+    }
+
+    .aliases {
+      display: block;
+      font-weight: 400;
+      font-size: var(--step--2);
+      color: var(--mute);
+    }
+
+    .cols {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+      gap: 1.5rem 2.5rem;
+    }
+
+    .sections {
+      margin: 0.4rem 0 1rem;
+      padding-inline-start: 1.3em;
+    }
+
+    .links {
+      list-style: none;
+      margin: 0 0 1.4rem;
+      padding: 0;
+      display: grid;
+      gap: 0.4rem;
+    }
+
+    .next {
+      padding-block-end: 3rem;
+    }
+  </style>
+</Page>

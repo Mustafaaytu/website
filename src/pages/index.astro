@@ -13,6 +13,7 @@ import { latestRelease, releaseUrl, releaseAssets, windowsAsset } from "../lib/r
 import platforms from "../generated/targets.json";
 import { SPELLED, sequence } from "../lib/lessons";
 import mascot from "../assets/mascot.png";
+import readme from "../generated/readme.json";
 
 const release = latestRelease();
 
@@ -42,6 +43,26 @@ const ratios = loop.ratios as number[];
 const loopClaim = `About ${loop.claim.value}x less than Crystal, on the line you just changed.`;
 const loopBand = `${Math.min(...ratios).toFixed(2)}x to ${Math.max(...ratios).toFixed(2)}x across ${loop.sessions.length} published sessions.`;
 const massRatio = Math.round(bin.crystal.kb / bin.iyi.kb);
+
+/* The first screen's code: README.md's first module, the file that imports
+ * it, and the session that builds the program, deletes the library and builds
+ * it again. That is the repository's own demonstration of the rule the
+ * headline states, so it is quoted rather than restated, and it is the first
+ * thing a reader sees beside the headline on a desk and under it on a phone.
+ * Each listing's caption is its file, named by its own `module` line, because
+ * a module's path is its file's path: the README says so in prose, and typing
+ * the two names here would be a second copy of a fact the listing carries. */
+const fileOf = (id: "first_module" | "first_import"): string => {
+  const named = /^module (\S+)$/m.exec(readme[id].text);
+  if (named === null) {
+    throw new Error(
+      `index: README.md's block "${id}" (${readme[id].cite}) declares no ` +
+        `module, so the home page cannot say which file it is. The listing ` +
+        `changed; re-anchor it in scripts/samples.mjs.`,
+    );
+  }
+  return `${named[1]}.iyi`;
+};
 
 /* The platforms README.md says are run every build, out of
  * scripts/targets.mjs rather than counted into this sentence by hand. */
@@ -101,19 +122,40 @@ const starts = [
 ---
 
 <Page
-  title="iyi, a friendly, fast language for people and their agents"
-  summary="iyi is a compiled language written for two readers: the person editing the code and the agent editing it beside them. Modules compile against declarations, never bodies, so a build reads less and so does a model, and a grounded edit spent fewer prompt tokens over twenty-six measured runs."
+  title="iyi, a language whose modules compile against declarations, never bodies"
+  summary={`iyi is a compiled language whose modules compile against their dependencies' declarations, never their bodies. So a changed line rebuilds ${loop.claim.value}x faster than under Crystal's rules, and an agent grounds an edit in an interface instead of a repository.`}
 >
+  {/* The hero is four grid children rather than a copy column and an art
+      column, so a phone can put the code straight under the headline and
+      the paragraph after it, and a desk can stand the code beside all three.
+      The mascot is small on purpose: it was half the first screen, and the
+      first screen is where a reader decides whether this is a language worth
+      reading, which a drawing cannot tell them and a listing can. */}
   <section class="hero">
     <div class="wrap hero-inner">
+      <div class="hero-art">
+        <Image
+          src={mascot}
+          alt="The iyi mascot: a smiling red heart with yellow gloves, waving"
+          width={128}
+          height={120}
+          densities={[1, 2]}
+          loading="eager"
+          decoding="async"
+        />
+      </div>
+      <h1>Modules compile against declarations, never bodies.</h1>
+      <div class="hero-code">
+        <p class="label">Build it, delete the library's source, build it again</p>
+        <Quote id="first_module" as="source" caption={fileOf("first_module")} />
+        <Quote id="first_import" as="source" caption={fileOf("first_import")} />
+        <Quote id="the_rule" as="console" />
+      </div>
       <div class="hero-copy">
-        <h1>A friendly, fast language for people and their agents.</h1>
         <p class="lede">
-          iyi is a compiled language written for two readers: the person
-          editing the code and the agent editing it beside them. One rule
-          serves both. A module builds against its dependencies' declarations,
-          never their bodies, so a build reads less, a program carries less,
-          and a model reads an interface instead of a repository.
+          iyi is a compiled language built on that rule. A changed line
+          rebuilds {loop.claim.value}x faster than under Crystal's rules, and
+          an agent grounds an edit in an interface instead of a repository.
         </p>
         <div class="hero-cta">
           <a class="cta" href={`${base}playground/`}>Take the tour</a>
@@ -122,18 +164,6 @@ const starts = [
         <p class="release">
           <a href={releaseUrl(release)}>Version {release.version}</a>, {release.date}
         </p>
-      </div>
-      <div class="hero-art">
-        <Image
-          src={mascot}
-          alt="The iyi mascot: a smiling red heart with yellow gloves, waving"
-          width={480}
-          height={450}
-          densities={[1, 2]}
-          loading="eager"
-          decoding="sync"
-          fetchpriority="high"
-        />
       </div>
     </div>
   </section>
@@ -148,7 +178,7 @@ const starts = [
           what the compiler's build of it printed.
         </p>
         <p>
-          <a href={firstHref}>Run it in the playground</a>
+          <a href={firstHref}>Run it in the tour</a>
         </p>
       </div>
       <div class="try-run">
@@ -214,7 +244,8 @@ const starts = [
         <p class="stamp-note">
           Rounds to green were the model's, and they were tied{" "}
           {pack.rounds_tied} times and lost {pack.rounds_lost} times. Both
-          readings come off one gate and both are published.
+          readings come off one gate and both are published.{" "}
+          <a href={`${base}agents/benchmark/`}>How this is measured</a>
         </p>
       </Stamped>
     </div>
@@ -396,43 +427,81 @@ const starts = [
     /* Hero ------------------------------------------------------------- */
 
     .hero {
-      padding-block: clamp(2.5rem, 6vw, 5rem) clamp(1.5rem, 4vw, 3rem);
+      padding-block: clamp(1.5rem, 4vw, 3.5rem) clamp(1.5rem, 4vw, 3rem);
     }
 
+    /* On a desk the mascot, the headline and the paragraph stack on the left
+     * and the code stands beside all three, wide enough that the session's
+     * longest line does not wrap at the full container. On a phone it is one
+     * column in reading order with the code second, straight under the
+     * headline, so the first screen of a phone holds a listing rather than a
+     * drawing and a paragraph. */
     .hero-inner {
       display: grid;
-      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-      gap: clamp(1.5rem, 5vw, 4rem);
-      align-items: center;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr);
+      grid-template-areas:
+        "art  code"
+        "head code"
+        "copy code";
+      grid-template-rows: auto auto 1fr;
+      gap: 1.1rem clamp(1.5rem, 4vw, 3.5rem);
+      align-items: start;
+    }
+
+    .hero-art {
+      grid-area: art;
+    }
+
+    .hero h1 {
+      grid-area: head;
+      font-size: var(--step-4);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      max-width: 18ch;
+      margin: 0;
+    }
+
+    .hero-code {
+      grid-area: code;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      min-width: 0;
+    }
+
+    .hero-code .label {
+      margin: 0;
+    }
+
+    .hero-code :global(.source) {
+      background: var(--raise);
+    }
+
+    .hero-copy {
+      grid-area: copy;
     }
 
     @media (max-width: 52rem) {
       .hero-inner {
         grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+          "art"
+          "head"
+          "code"
+          "copy";
+        grid-template-rows: none;
       }
-      .hero-art {
-        order: -1;
-        justify-content: flex-start;
+      .hero-inner .hero-art :global(img) {
+        width: 4.5rem;
       }
-      .hero-inner .hero-art img {
-        max-width: 9rem;
-      }
-    }
-
-    .hero h1 {
-      font-size: var(--step-5);
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      max-width: 16ch;
-      margin-block-end: 1.1rem;
     }
 
     .lede {
       font-size: var(--step-1);
       line-height: 1.5;
       color: var(--graphite);
-      max-width: 48ch;
-      margin: 0 0 1.8rem;
+      max-width: 44ch;
+      margin: 0 0 1.6rem;
     }
 
     .hero-cta {
@@ -453,14 +522,11 @@ const starts = [
       font-weight: 600;
     }
 
-    .hero-art {
-      display: flex;
-      justify-content: center;
-    }
-
-    .hero-art img {
-      width: 100%;
-      max-width: 26rem;
+    /* `:global(img)` because astro:assets renders the element, so this
+     * file's scoping attribute is not on it. */
+    .hero-art :global(img) {
+      display: block;
+      width: 8rem;
       height: auto;
     }
 

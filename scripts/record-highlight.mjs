@@ -178,6 +178,33 @@ if (files.length === 0) {
   throw new Error(`found no .iyi files under ${roots.join(", ")}`);
 }
 
+// The text each listing encodes, by key. For a file it is the file.
+const sources = Object.fromEntries(
+  files.map((key) => [key, readFileSync(fileOf(key), "utf8")]),
+);
+
+// The API reference's listings: what `iyi doc` printed for each prelude type
+// and std module, out of records/api.json, so the reference is set in the same
+// tokens as every other listing on the site. They are compiler output rather
+// than files, so a listing's key is the command that printed it, `iyi doc
+// std/set`, which no path can be. Only a surface is highlighted; a module the
+// compiler refused to document has a sentence, not code, and is not here.
+//
+// The API record has to be of this release, or the highlighting would be of
+// another release's surface. So it is recorded first: `npm run record:api`.
+const api = JSON.parse(readFileSync(resolve(site, "records", "api.json"), "utf8"));
+if (api?.recorded?.commit !== commit) {
+  throw new Error(
+    `records/api.json was recorded at ${String(api?.recorded?.commit).slice(0, 9)} ` +
+      `and this is ${release.tag}, ${commit.slice(0, 9)}. Record the API ` +
+      `first, from the same tree: npm run record:api`,
+  );
+}
+for (const surface of api.surfaces) {
+  if (surface.exitCode === 0) sources[`iyi doc ${surface.name}`] = surface.stdout;
+}
+const listings = Object.keys(sources);
+
 // ---------------------------------------------------------------------------
 // Run the compiler's highlighter over all of them, once
 // ---------------------------------------------------------------------------
@@ -188,23 +215,19 @@ if (files.length === 0) {
 const PASS = `require "json"
 require "crystal/syntax_highlighter/html"
 
-paths = Hash(String, String).from_json(File.read(ARGV[0]))
+sources = Hash(String, String).from_json(File.read(ARGV[0]))
 result = {} of String => String
-paths.each do |key, path|
-  result[key] = Crystal::SyntaxHighlighter::HTML.highlight(File.read(path))
+sources.each do |key, text|
+  result[key] = Crystal::SyntaxHighlighter::HTML.highlight(text)
 end
 print result.to_json
 `;
 
 const work = mkdtempSync(join(tmpdir(), "iyi-record-highlight-"));
 const pass = join(work, "highlight_pass.cr");
-const list = join(work, "paths.json");
+const list = join(work, "sources.json");
 writeFileSync(pass, PASS, "utf8");
-writeFileSync(
-  list,
-  JSON.stringify(Object.fromEntries(files.map((key) => [key, fileOf(key)]))),
-  "utf8",
-);
+writeFileSync(list, JSON.stringify(sources), "utf8");
 
 const run = spawnSync(crystal, ["run", "--no-color", pass, "--", list], {
   cwd: repo,
@@ -248,7 +271,7 @@ function textOf(html) {
 const record = {};
 let ruleSpans = 0;
 
-for (const path of files) {
+for (const path of listings) {
   const html = highlighted[path];
   if (typeof html !== "string") {
     throw new Error(
@@ -265,7 +288,7 @@ for (const path of files) {
   }
 
   const before = textOf(html);
-  const source = readFileSync(fileOf(path), "utf8");
+  const source = sources[path];
   if (before !== source) {
     throw new Error(
       `${path}: the highlighter's output does not encode the file. The ` +
@@ -306,6 +329,6 @@ const bytes = Object.values(record).reduce(
   0,
 );
 console.log(
-  `highlight: ${files.length} listings, ${ruleSpans} rule words, ` +
+  `highlight: ${listings.length} listings, ${ruleSpans} rule words, ` +
     `${bytes} bytes of markup, at ${commit.slice(0, 9)}`,
 );

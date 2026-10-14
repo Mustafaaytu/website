@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 // The build-time gate over the committed records.
 //
-// The three records under records/ are produced by scripts that need the
-// iyi compiler and wasi-sdk. The Pages build has neither, so it cannot make
+// The records under records/ are produced by scripts that need the iyi
+// compiler and wasi-sdk. The Pages build has neither, so it cannot make
 // them and must not pretend to: this script only verifies what is committed,
 // and fails the build naming the file when a record is missing, stale by
-// checksum, or short of provenance. Then it publishes two things the site
+// checksum or by release, or short of provenance. Then it publishes two things the site
 // imports: the linked modules, copied into public/wasm/ so they can be
 // served, and one small entry per sample under src/generated/playground/,
 // which is the slice of the manifest a browser is allowed to see. The slice
@@ -38,7 +38,7 @@ import {
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { blobAt, releaseRef } from "./release-ref.mjs";
+import { blobAt, releaseRef, treeAt } from "./release-ref.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const site = resolve(here, "..");
@@ -391,6 +391,151 @@ if (diagnostics) {
 }
 
 // ---------------------------------------------------------------------------
+// api.json
+// ---------------------------------------------------------------------------
+
+// The API reference: what `iyi doc` printed for every prelude type and every
+// std module. Unlike the records above it cannot be checked file by file
+// against a digest, because what it holds is the compiler's reading of the
+// library rather than a copy of it, and the Pages build has no compiler to
+// read with. So it is held to the release whole: it was recorded at the
+// commit the tag names, by a compiler built there, and the modules it covers
+// are exactly the modules that tag ships. A release that moves the library
+// moves the tag, and the reference is recorded again with it.
+
+/* A prelude listing line, `class Array(T)   # The one sequence ...`, read the
+ * way scripts/record-api.mjs reads it, so the types this check expects are the
+ * ones the compiler listed. */
+const PRELUDE_LINE = /^([a-z]+)\s+([A-Z][A-Za-z0-9_]*)(?:\([^)]*\))?(?:\s+#.*)?$/;
+
+const api = load("api.json");
+/* The surfaces by name, for the highlight check below: a reference listing is
+ * keyed `iyi doc <name>` there and has to encode the text recorded here. */
+const apiSurfaces = new Map();
+
+if (api) {
+  const file = "records/api.json";
+  checkProvenance("api.json", api);
+
+  if (api.recorded?.commit !== release.commit) {
+    problem(
+      file,
+      `was recorded at ${String(api.recorded?.commit).slice(0, 9)} and ` +
+        `${release.tag} is ${release.commit.slice(0, 9)}, so it documents a ` +
+        `library that is not the one the release ships. Regenerate with: npm ` +
+        `run record:api`,
+    );
+  }
+  if (typeof api.recorded?.compiler === "string" && !api.recorded.compiler.includes(release.commit.slice(0, 9))) {
+    problem(
+      file,
+      `was printed by "${api.recorded.compiler}", which does not name ` +
+        `${release.commit.slice(0, 9)}, the commit ${release.tag} is`,
+    );
+  }
+
+  const listed = [];
+  if (api.prelude?.exitCode !== 0 || typeof api.prelude?.stdout !== "string" || api.prelude.stdout.trim() === "") {
+    problem(file, `has no "iyi doc prelude" listing, so nothing says which types the prelude has`);
+  } else {
+    for (const line of api.prelude.stdout.split("\n")) {
+      if (line.trim() === "") continue;
+      const match = PRELUDE_LINE.exec(line);
+      if (match) listed.push(match[2]);
+      else problem(file, `has a prelude listing line that names no type: "${line}"`);
+    }
+  }
+
+  if (!Array.isArray(api.surfaces) || api.surfaces.length === 0) {
+    problem(file, `records no surfaces`);
+  } else {
+    const slugs = new Map();
+    for (const entry of api.surfaces) {
+      const name = entry?.name;
+      if (typeof name !== "string" || name === "") {
+        problem(file, `has a surface with no name`);
+        continue;
+      }
+      if (apiSurfaces.has(name)) problem(file, `lists "${name}" twice`);
+      apiSurfaces.set(name, entry);
+
+      for (const field of ["kind", "slug", "command"]) {
+        if (typeof entry[field] !== "string" || entry[field] === "") {
+          problem(file, `surface "${name}" has no ${field}`);
+        }
+      }
+      for (const field of ["stdout", "stderr"]) {
+        if (typeof entry[field] !== "string") problem(file, `surface "${name}" has no ${field}`);
+      }
+      if (typeof entry.exitCode !== "number") {
+        problem(file, `surface "${name}" records no exit code`);
+      } else if (entry.exitCode === 0 && !entry.stdout?.trim()) {
+        problem(file, `surface "${name}" exited 0 and printed nothing, so there is no surface to show`);
+      } else if (entry.exitCode !== 0 && !entry.stderr?.trim()) {
+        problem(file, `surface "${name}" exited ${entry.exitCode} and records no reason`);
+      }
+
+      // The address is the name with its slashes made path-safe, and two
+      // addresses that differ only in case are one page on a case-insensitive
+      // disk.
+      if (entry.slug !== name.replace(/\//g, "-") || !/^[A-Za-z0-9_-]+$/.test(entry.slug ?? "")) {
+        problem(file, `surface "${name}" has slug "${entry.slug}", which is not its name made URL safe`);
+      } else {
+        const folded = entry.slug.toLowerCase();
+        if (slugs.has(folded)) {
+          problem(file, `surfaces "${name}" and "${slugs.get(folded)}" share an address once case is ignored`);
+        }
+        slugs.set(folded, name);
+      }
+
+      if (entry.kind === "prelude") {
+        // The compiler listed the type, so it documenting it is not optional:
+        // the recorder refuses that, and a record saying otherwise was edited.
+        if (entry.exitCode !== 0) {
+          problem(file, `prelude type "${name}" records a refusal, which the recorder does not write`);
+        }
+        if (!listed.includes(name)) {
+          problem(file, `records prelude type "${name}", which "iyi doc prelude" does not list`);
+        }
+      } else if (entry.kind === "std") {
+        const expected = `src/${name}.iyi`;
+        if (entry.path !== expected) {
+          problem(file, `std module "${name}" cites ${entry.path}, and its file is ${expected}`);
+        } else if (blobAt(repo, release.tag, expected) === null) {
+          problem(
+            file,
+            `records ${name}, and ${expected} is not in ${release.tag}. ` +
+              `Regenerate with: npm run record:api`,
+          );
+        }
+      } else {
+        problem(file, `surface "${name}" is of kind "${entry.kind}", which is neither prelude nor std`);
+      }
+    }
+
+    // Nothing the release ships is left out. A module in src/std/ with no
+    // entry is a hole in the reference that no page shows and no reader can
+    // see, and a listed prelude type with no entry is the same hole.
+    for (const path of treeAt(repo, release.tag, "src/std")) {
+      if (!path.endsWith(".iyi")) continue;
+      const name = path.replace(/^src\//, "").replace(/\.iyi$/, "");
+      if (apiSurfaces.get(name)?.kind !== "std") {
+        problem(
+          file,
+          `has no entry for ${name}, and ${path} is in ${release.tag}. ` +
+            `Regenerate with: npm run record:api`,
+        );
+      }
+    }
+    for (const name of listed) {
+      if (apiSurfaces.get(name)?.kind !== "prelude") {
+        problem(file, `"iyi doc prelude" lists ${name} and the record has no surface for it`);
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // highlight.json
 // ---------------------------------------------------------------------------
 
@@ -426,6 +571,24 @@ if (highlight) {
         problem(file, `${path} has no markup`);
         continue;
       }
+      // A reference listing is keyed by the command that printed it, and the
+      // text it has to encode is what records/api.json says that command
+      // printed. That record is held to the release above, so this holds the
+      // markup to the same release.
+      if (path.startsWith("iyi doc ")) {
+        const surface = apiSurfaces.get(path.slice("iyi doc ".length));
+        if (surface === undefined || surface.exitCode !== 0) {
+          problem(file, `records "${path}", which records/api.json has no surface for`);
+        } else if (textOf(html) !== surface.stdout) {
+          problem(
+            file,
+            `"${path}" is stale: the recorded markup does not encode what ` +
+              `records/api.json says the command printed. Regenerate with: ` +
+              `npm run record:api && npm run record:highlight`,
+          );
+        }
+        continue;
+      }
       const source = sourceBytes(path);
       if (source === null) {
         problem(file, `records ${sourceWhere(path)}, which is not there`);
@@ -436,6 +599,17 @@ if (highlight) {
           file,
           `${sourceWhere(path)} is stale: the recorded markup does not ` +
             `encode the file that release ships`,
+        );
+      }
+    }
+    // Every surface the reference prints is set in the compiler's tokens, so
+    // one with no markup would be a page that cannot render.
+    for (const [name, surface] of apiSurfaces) {
+      if (surface.exitCode === 0 && listings[`iyi doc ${name}`] === undefined) {
+        problem(
+          file,
+          `has no listing for "iyi doc ${name}", so its reference page has ` +
+            `no tokens to render. Regenerate with: npm run record:highlight`,
         );
       }
     }
@@ -629,7 +803,7 @@ const listings = Object.keys(highlight.files).length;
 const marked = entries.filter((entry) => entry.data.diagnostic !== null).length;
 console.log(
   `records: ${wasmFiles.length} wasm modules verified and published, ` +
-    `${cases} diagnostics, ${listings} listings, ` +
+    `${cases} diagnostics, ${listings} listings, ${apiSurfaces.size} API surfaces, ` +
     `${entries.length} playground entries written to src/generated/playground/` +
     (marked ? ` (${marked} carrying a recorded diagnostic)` : "") +
     (agent ? ", agent record verified" : "") +

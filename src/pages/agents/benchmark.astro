@@ -1,0 +1,482 @@
+---
+/**
+ * The grounding benchmark, with its method.
+ *
+ * The home page, the why page and the agents page each print one card: a
+ * grounded edit spent fewer prompt tokens, and the rounds to green were tied
+ * or lost. That card is the result. This page is the measurement behind it,
+ * set out the way a reader would need to repeat it: what is counted, on which
+ * programs, against what bar, by which command, on what, and how far the
+ * runs spread.
+ *
+ * NOTHING ON THIS PAGE IS TYPED. The figures are `facts.recorded.context_pack`,
+ * which `bench/site_facts.py` parses out of README.md, the same record the
+ * other three pages read. The method is `src/generated/benchmark.json`, which
+ * `scripts/benchmark.mjs` reads out of `bench/context_pack.py`, AI_FIRST.md
+ * §5 and the CI workflow at the release tag: the targets, the bars, the trial
+ * count, the round cap, the task the model is given, and every run §5 sets out
+ * as a table. Each run's saving and verdict is computed from that table here,
+ * not copied from the prose beside it.
+ *
+ * THE LOSSES ARE STATED BESIDE THE WIN, as on the home page. The token saving
+ * is what the pack is for; the rounds are the model's, and the page says how
+ * often they went the other way in the same card as the saving.
+ */
+import Page from "../../layouts/Page.astro";
+import Stamped from "../../components/Stamped.astro";
+import facts from "../../generated/facts.json";
+import benchmark from "../../generated/benchmark.json";
+import { SPELLED } from "../../lib/lessons";
+import { renderRecording } from "../../lib/recording";
+
+const base = import.meta.env.BASE_URL;
+const pack = facts.recorded.context_pack;
+const { script, ci, runs, provenance } = benchmark;
+
+/* The runs §5 sets out, counted by verdict, so the sentence under the table
+ * says what the table shows rather than what a reader adds up. */
+const verdicts = { won: 0, tied: 0, lost: 0 };
+for (const run of runs.tables) verdicts[run.rounds as keyof typeof verdicts] += 1;
+const savings = runs.tables.map((run) => run.saving);
+
+const count = (n: number) => SPELLED[n] ?? String(n);
+const section = `${runs.source} \u00a7${runs.section.split(".")[0]}`;
+
+/* "tied two times and lost two times", naming only the verdicts that
+ * happened, so a run set with no win does not read "won no times". */
+const outcomes = Object.entries(verdicts)
+  .filter(([, n]) => n > 0)
+  .map(([verdict, n]) => `${verdict} ${count(n)} ${n === 1 ? "time" : "times"}`);
+const outcomesText =
+  outcomes.length > 1 ? `${outcomes.slice(0, -1).join(", ")} and ${outcomes.at(-1)}` : outcomes[0];
+---
+
+<Page
+  kind="TechArticle"
+  title="The grounding benchmark"
+  summary={`How the ${pack.tokens_low} to ${pack.tokens_high}% prompt token saving for an edit grounded by iyi mod context is measured: the targets, the bars, the commands, and every run set out trial by trial, with the rounds the model tied and lost.`}
+>
+  <section class="hero">
+    <div class="wrap">
+      <p class="label"><a href={`${base}agents/`}>For agents</a>, measured</p>
+      <h1>What a grounding pack saves, and what it does not.</h1>
+      <p class="lede">
+        One gate in the repository, <code>{script.path}</code>, decides
+        whether an edit grounded by <code>iyi mod context</code> costs less
+        than one grounded by the sources it stands in for. This page is that
+        gate's method and its results, read out of the gate and the record it
+        reports to.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <Stamped
+        claim={`${pack.tokens_low} to ${pack.tokens_high}% fewer prompt tokens.`}
+        band={`The grounding pack is ${pack.size_low} to ${pack.size_high}% of the size of the sources it replaces, over ${pack.runs} measured runs.`}
+        subject={pack.subject}
+        outcome="win"
+      >
+        <p class="stamp-note">
+          Rounds to green were the model's, and they were tied{" "}
+          {pack.rounds_tied} times and lost {pack.rounds_lost} times. Both
+          readings come off one gate and both are published.
+        </p>
+      </Stamped>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <h2>What is measured</h2>
+      <p class="sub">
+        The gate has two arms, and names them. The token arm needs only the
+        compiler and weighs the pack. The rounds arm needs a model, and counts
+        what the model is sent and how many answers it takes.
+      </p>
+
+      <ol class="measures">
+        <li>
+          <h3>Pack size</h3>
+          <p>
+            <code>iyi mod context</code> is run on each target, and its output
+            is weighed in bytes against the sources of the target's import
+            closure, which is what an agent reads when there is no pack. The
+            pack may be no more than {script.threshold.percent}% of those
+            sources, and it must not carry the line from a body named for each
+            target, because a pack carrying bodies is not a surface whatever
+            its size.
+          </p>
+          <div class="scroll-x" role="region" tabindex="0" aria-label="The targets the pack is measured on">
+            <table class="matrix">
+              <thead>
+                <tr>
+                  <th scope="col">target</th>
+                  <th scope="col">import closure</th>
+                  <th scope="col">body line it must not carry</th>
+                </tr>
+              </thead>
+              <tbody>
+                {
+                  script.targets.map((target) => (
+                    <tr>
+                      <th scope="row"><code>{target.entry}</code></th>
+                      <td>
+                        {target.closure.map((source, i) => (
+                          <>{i === 0 ? "" : ", "}<code>{source}</code></>
+                        ))}
+                      </td>
+                      <td><code>{target.marker}</code></td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="result">
+            Result: the pack is {pack.size_low} to {pack.size_high}% of the
+            sources.
+          </p>
+        </li>
+
+        <li>
+          <h3>Prompt tokens</h3>
+          <p>
+            The same task is given to a model once grounded by the pack of{" "}
+            <code>{script.roundsTarget}</code> and once grounded by its
+            sources, {count(script.trials)} trials per arm. Every prompt a
+            trial sends is counted, the follow-ups after a failed build
+            included, and the count is in bytes of prompt. The pack has to
+            come in at least {script.tokenBar.percent}% under the sources.
+          </p>
+          <p class="result">
+            Result: {pack.tokens_low} to {pack.tokens_high}% fewer, over{" "}
+            {pack.runs} measured runs.
+          </p>
+        </li>
+
+        <li>
+          <h3>Rounds to green</h3>
+          <p>
+            A round is one answer from the model. Green is{" "}
+            <code>{script.build}</code> passing on a program that mentions
+            every literal the task names:{" "}
+            {script.marks.map((mark, i) => (
+              <>{i === 0 ? "" : i === script.marks.length - 1 ? " and " : ", "}<code>{mark}</code></>
+            ))}. After a failed build, <code>{script.fix}</code> applies the
+            compiler's own suggested edits before the model is asked again,
+            on both arms. A trial still not green after{" "}
+            {count(script.attempts)} rounds fails the gate. The pack must not
+            lose rounds; a tie passes.
+          </p>
+          <p class="result">
+            Result: tied {pack.rounds_tied} times and lost{" "}
+            {pack.rounds_lost} times.
+          </p>
+        </li>
+      </ol>
+
+      <figure class="source">
+        <figcaption class="source-head">
+          <span class="path">{script.path}</span>
+          <span>lines {script.task.from} to {script.task.to}</span>
+        </figcaption>
+        <div
+          class="scroll-x"
+          role="region"
+          tabindex="0"
+          aria-label={`The task the model is given, ${script.path}, lines ${script.task.from} to ${script.task.to}`}
+        >
+          <pre><code>{script.task.text}</code></pre>
+        </div>
+      </figure>
+      <p class="sub cite">
+        The task, as the gate gives it to the model, with the grounding
+        appended after its last line.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>The commands</h2>
+      <p class="sub">
+        The first runs the token arm alone. The second runs both, and takes a
+        command that reads a prompt on stdin and writes a program on stdout,
+        which is how the model is plugged in.
+      </p>
+      <div class="two">
+        {
+          script.usage.map((use) => (
+            <div class="console">
+              <div class="console-chrome">
+                <i aria-hidden="true" />
+                <i aria-hidden="true" />
+                <i aria-hidden="true" />
+                <span class="caption">{use.runs}</span>
+              </div>
+              <pre set:html={renderRecording(use.command, "shell")} />
+            </div>
+          ))
+        }
+      </div>
+      <p class="sub run-it">
+        The first needs no model, so CI runs it, in{" "}
+        {ci.steps.length === 1 ? "the step" : `${count(ci.steps.length)} steps`}{" "}
+        {ci.steps.map((step, i) => (
+          <>{i === 0 ? "" : i === ci.steps.length - 1 ? " and " : ", "}<q>{step.name}</q></>
+        ))}{" "}
+        of <code>{ci.workflow}</code>. The second needs a model and is not
+        in CI.
+      </p>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <h2>Machine and sessions</h2>
+      {
+        pack.machine === null ? (
+          <p class="sub">
+            No machine. Both figures are counts, bytes and rounds, rather than
+            durations, so README.md names no machine for them and the record
+            carries none. This site does not borrow one from a neighbouring
+            measurement.
+          </p>
+        ) : (
+          <p class="sub">Measured on {pack.machine}.</p>
+        )
+      }
+      <p class="sub">
+        {section} names {runs.harness.join(" and ")} as the harness for the
+        model runs it sets out.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>The spread</h2>
+      <p class="sub">
+        README.md gives {pack.tokens_low} to {pack.tokens_high}% over{" "}
+        {pack.runs} runs and points at {section} for every one of them. The{" "}
+        {count(runs.tables.length)} runs that section sets out trial by trial
+        are below, with the saving and the verdict on rounds worked out from
+        each table.
+      </p>
+      <div class="scroll-x" role="region" tabindex="0" aria-label={`The runs ${runs.source} sets out trial by trial`}>
+        <table class="matrix runs">
+          <thead>
+            <tr>
+              <th scope="col">{runs.source}</th>
+              <th scope="col">pack rounds</th>
+              <th scope="col">raw rounds</th>
+              <th scope="col">pack prompt bytes</th>
+              <th scope="col">raw prompt bytes</th>
+              <th scope="col">fewer bytes</th>
+              <th scope="col">rounds</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              runs.tables.map((run) => (
+                <tr data-rounds={run.rounds}>
+                  <th scope="row">lines {run.from} to {run.to}</th>
+                  <td>{run.pack.rounds.join(", ")} = {run.pack.total}</td>
+                  <td>{run.raw.rounds.join(", ")} = {run.raw.total}</td>
+                  <td>{run.pack.bytes.toLocaleString("en-GB")}</td>
+                  <td>{run.raw.bytes.toLocaleString("en-GB")}</td>
+                  <td>{run.saving}%</td>
+                  <td>{run.rounds}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="sub">
+        Across these {count(runs.tables.length)}, the pack's prompts ran{" "}
+        {Math.min(...savings)} to {Math.max(...savings)}% smaller, and the
+        rounds were {outcomesText}. A lost round is
+        the pack arm needing more rounds than the raw arm on the same task.
+      </p>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <h2>Where this page comes from</h2>
+      <p class="sub">
+        The figures are the ones <code>{facts.provenance.generator}</code>{" "}
+        parses out of README.md, at{" "}
+        <code>{facts.provenance.commit}</code>, the same record the home, why
+        and agents pages print. The method and the runs are read by{" "}
+        <code>{provenance.generator}</code> out of <code>{script.path}</code>,{" "}
+        {runs.source} and <code>{ci.workflow}</code> at the{" "}
+        {provenance.release} release.
+      </p>
+      <p class="sub run-it">
+        <a href={`${base}agents/`}>The loop the pack grounds, recorded</a>
+      </p>
+    </div>
+  </section>
+
+  <style>
+    section {
+      padding-block: clamp(2.5rem, 5vw, 4.5rem);
+    }
+
+    section h2 {
+      font-size: var(--step-3);
+      margin-block-end: 0.6rem;
+    }
+
+    section h3 {
+      font-size: var(--step-1);
+      margin-block: 0 0.4rem;
+    }
+
+    .band {
+      background: var(--raise);
+      border-block: var(--hair) solid var(--hairline);
+    }
+
+    .label {
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--brand-deep);
+      margin-block-end: 0.6rem;
+    }
+
+    .label a {
+      color: inherit;
+    }
+
+    .sub {
+      color: var(--graphite);
+      max-width: 68ch;
+      margin-block-end: 1.4rem;
+      font-size: var(--step-0);
+    }
+
+    .hero h1 {
+      font-size: var(--step-4);
+      max-width: 34ch;
+      margin-block-end: 1rem;
+    }
+
+    .hero .lede {
+      font-size: var(--step-1);
+      color: var(--graphite);
+      max-width: 62ch;
+    }
+
+    .stamp-note {
+      color: var(--graphite);
+      font-size: var(--step--1);
+      max-width: 62ch;
+      margin-block: 0 0.8rem;
+    }
+
+    /* The three quantities, numbered because the order is the gate's: size
+     * first, which needs no model, then the two the model decides. */
+    .measures {
+      list-style: none;
+      counter-reset: measure;
+      margin: 1.6rem 0 2.4rem;
+      padding: 0;
+      display: grid;
+      gap: 2.2rem;
+    }
+
+    .measures > li {
+      counter-increment: measure;
+    }
+
+    .measures h3::before {
+      content: counter(measure) ". ";
+      color: var(--mute);
+      font-family: var(--font-mono);
+      font-weight: 400;
+    }
+
+    .measures p {
+      color: var(--graphite);
+      max-width: 68ch;
+      font-size: var(--step--1);
+      margin-block-end: 0.8rem;
+    }
+
+    .measures .result {
+      color: var(--ink);
+      font-weight: 600;
+      margin-block-end: 0;
+    }
+
+    .cite {
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      color: var(--mute);
+      margin-block-start: 0.6rem;
+    }
+
+    .matrix {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--step--1);
+      color: var(--graphite);
+      margin-block-end: 1rem;
+    }
+
+    .matrix th {
+      text-align: start;
+      font-weight: 500;
+    }
+
+    .matrix thead th {
+      font-family: var(--font-mono);
+      font-size: var(--step--2);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--mute);
+      padding-block-end: 0.4rem;
+      border-block-end: var(--hair) solid var(--hairline);
+      white-space: nowrap;
+    }
+
+    .matrix td,
+    .matrix tbody th {
+      padding-block: 0.5rem;
+      padding-inline-end: 1rem;
+      border-block-end: var(--hair) solid var(--hairline);
+      vertical-align: top;
+    }
+
+    /* A run the pack lost on rounds carries the signal on its own edge, the
+     * colour the site gives a measurement iyi loses. Tied and won rows are
+     * left plain. */
+    .runs tbody tr[data-rounds="lost"] th {
+      box-shadow: inset 2px 0 0 var(--signal);
+      padding-inline-start: 0.6rem;
+    }
+
+    .runs td {
+      font-family: var(--font-mono);
+      white-space: nowrap;
+    }
+
+    .two {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+      gap: 1.25rem;
+    }
+
+    .run-it {
+      margin-block-start: 1.6rem;
+      margin-block-end: 0;
+    }
+  </style>
+</Page>

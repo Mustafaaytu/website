@@ -37,6 +37,28 @@ const die = (message) => {
 };
 
 /**
+ * A code span: a run of backticks, the code, and a run of the same length.
+ *
+ * One backtick was all the project documents used, and CHANGELOG.md writes
+ * ``` `` ` `` ``` for a backtick and ```` ```` ```crystal ```` ```` for a fence,
+ * which the one-backtick pattern split into stray spans with the prose
+ * between them set as code. The run is matched whole, as CommonMark does, so
+ * a shorter run inside the span is text.
+ */
+export const CODE_SPAN = /(?<!`)(`+)(?!`)([\s\S]*?[^`])\1(?!`)/g;
+
+/** A code span's text: one space padding each side is the delimiter's. */
+export const codeSpanText = (code) =>
+  /^ [\s\S]* $/.test(code) && code.trim() !== "" ? code.slice(1, -1) : code;
+
+/**
+ * Bold: two asterisks, then anything that is not two asterisks. A single one
+ * inside is italic, and CHANGELOG.md writes `**... is *n* distinct ...**`,
+ * which a bold of "no asterisk at all" left as punctuation on the page.
+ */
+export const BOLD = /\*\*((?:[^*]|\*(?!\*))+?)\*\*/g;
+
+/**
  * Inline markdown, rendered to HTML.
  *
  * Code spans first and whole: what is inside one is not markdown, and a
@@ -50,8 +72,8 @@ const die = (message) => {
  */
 export function inline(text, { definitions = {}, link = (href) => href } = {}) {
   const spans = [];
-  let out = text.replace(/`([^`]+)`/g, (_, code) => {
-    spans.push(`<code>${escape(code)}</code>`);
+  let out = text.replace(CODE_SPAN, (_, _fence, code) => {
+    spans.push(`<code>${escape(codeSpanText(code))}</code>`);
     return `\u0000${spans.length - 1}\u0000`;
   });
 
@@ -83,7 +105,7 @@ export function inline(text, { definitions = {}, link = (href) => href } = {}) {
     return `<a href="${escape(link(href))}">${label}</a>`;
   });
 
-  out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  out = out.replace(BOLD, "<strong>$1</strong>");
   out = out.replace(/(^|[\s(])\*([^*\s][^*]*)\*(?=[\s.,;:)]|$)/g, "$1<em>$2</em>");
 
   return out.replace(/\u0000(\d+)\u0000/g, (_, index) => spans[Number(index)]);

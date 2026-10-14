@@ -68,7 +68,7 @@ const supports = (cap: Capability) => caps.supported.includes(cap);
 const runs = runnable(sample) && supports("run");
 
 /* The program and its colouring, both out of the records and both read here at
- * build time, which keeps the quarter of a megabyte of listings in
+ * build time, which keeps every listing in
  * `records/highlight.json` out of the client bundle. */
 const source = recordedText(sample.path);
 const recordedInk = highlightedLines(sample.path);
@@ -124,7 +124,7 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
   <div class="bench-head">
     <div class="bench-title">
       <p class="label">
-        <a href={`${base}playground/`}>Playground</a>
+        <a href={`${base}playground/`}>Tour</a>
         {section && `, ${section.title}`}{step && `, ${step}`}
       </p>
       <h1>{sample.set === "tour" ? sample.id : sample.path}</h1>

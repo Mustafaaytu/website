@@ -3,13 +3,15 @@ name: site
 # The site restates the iyi repository: every number and listing on it is
 # generated at build time from that tree (README.md, SPEC.md, CHANGELOG.md,
 # `samples/`, `bench/doc_numbers.py`). So the build checks iyi out beside this
-# repository - the sibling `iyi/` the scripts look for by default - and runs
-# the same generators a developer runs locally.
+# repository - the sibling `iyi/` the scripts look for by default - moves it to
+# the release CHANGELOG.md states, and runs the same generators a developer
+# runs locally.
 #
-# The records under `records/` (wasm modules, diagnostics, highlighting) are
-# committed, produced on a machine with the compiler and wasi-sdk by
-# `npm run record`; the build only checks that they still describe the
-# iyi tree it was given, and refuses to publish if they do not.
+# The records under `records/` (wasm modules, diagnostics, highlighting, the
+# agent loop) are committed, produced on a machine with the compiler and
+# wasi-sdk by `npm run record`, by hand or by `record.yml` when iyi releases;
+# the build only checks that they still describe the release, and refuses to
+# publish if they do not.
 
 on:
   push:
@@ -49,10 +51,9 @@ jobs:
       # bench/site_facts.py counts commits and authors for the contribution
       # section, and refuses to publish a count taken from a truncated history
       # rather than printing a smaller number with the same confidence as a
-      # true one; and scripts/records.mjs reads every recorded file out of the
-      # tag CHANGELOG.md names, because a record is evidence about a release
-      # and not about whatever master happens to be. A clone with no tags
-      # fails the build by name rather than falling back to the checkout.
+      # true one; and the step after setup-node needs the tag CHANGELOG.md
+      # names to check it out. A clone with no tags fails the build by name
+      # rather than falling back to the checkout.
       - uses: actions/checkout@v4
         with:
           repository: iyilang/iyi
@@ -64,6 +65,30 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: site/package-lock.json
+
+      # The tree every generator reads is the release, not master. The records
+      # were already read out of the tag, and everything else - site_facts.py,
+      # the README.md the recorded figures are parsed from, the samples, the
+      # CI workflow the targets come from - read whatever master held that
+      # morning. So the live footer said "measured at c8978396c", a master
+      # commit, beside an install command for 0.17.0, which is fe3db8354: one
+      # page stating two trees. Checking the tag out here moves every reader
+      # at once, including ones written later, and the history it counts ends
+      # at the release the page names.
+      #
+      # The version comes from `releaseRef`, the function the recorders and
+      # scripts/records.mjs ask, so the heading is parsed by one regex and a
+      # missing tag fails here with that function's sentence. A commit to the
+      # language after the release reaches the site when it is released.
+      - name: Check iyi out at the release CHANGELOG.md states
+        working-directory: iyi
+        run: |
+          tag=$(node --input-type=module -e '
+            const { releaseRef } = await import(process.argv[1]);
+            console.log(releaseRef(".").tag);
+          ' "$GITHUB_WORKSPACE/site/scripts/release-ref.mjs")
+          git -c advice.detachedHead=false checkout --detach "$tag"
+          echo "iyi at $tag, $(git rev-parse --short=9 HEAD)"
 
       - uses: actions/setup-python@v5
         with:

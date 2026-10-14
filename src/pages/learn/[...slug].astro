@@ -79,6 +79,10 @@ const rules = rulesOf(lesson);
 const run = runOf(lesson);
 const sources = lesson.data.sources ?? [];
 const indexHref = `${base.replace(/\/$/, "")}/learn/`;
+// The same step as Markdown, from `learn/[slug].md.ts`. Linked in the page
+// rather than only from llms.txt, so an agent handed this URL finds the text
+// edition from here.
+const markdownHref = `${indexHref}${lesson.id}.md`;
 const spelled = SPELLED[total] ?? String(total);
 
 // The step's position in the path, drawn as ticks rather than written twice.
@@ -124,6 +128,10 @@ const broken = breakCases(lesson);
       </ol>
       <h1>{lesson.data.title}</h1>
       <p class="lede" set:html={inlineMarkdown(lesson.data.summary)} />
+      <p class="alt">
+        <a href={markdownHref} type="text/markdown">This step as Markdown</a>,
+        with every listing and recording written out.
+      </p>
     </div>
 
     {
@@ -296,6 +304,15 @@ const broken = breakCases(lesson);
     color: var(--graphite);
     max-width: 58ch;
     margin-block-end: 0;
+  }
+
+  /* The Markdown edition, set small and mono under the lede: it is a way to
+   * read the step, not part of it. */
+  .alt {
+    margin-block: 0.9rem 0;
+    font-family: var(--font-mono);
+    font-size: var(--step--2);
+    color: var(--mute);
   }
 
   /* The step's sections, in the rail beside its opening. Aligned to the lede

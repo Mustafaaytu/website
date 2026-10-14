@@ -1,0 +1,145 @@
+---
+/**
+ * The docs hub: one line per place a reader goes to read about iyi.
+ *
+ * It describes destinations and asserts nothing about the language, so the
+ * only facts on it are the release it points into and the size of the
+ * reference, and both are read: the version out of releases.json, the
+ * repository out of what the installer downloads from, and the counts out of
+ * the API record that scripts/api.mjs indexed.
+ *
+ * SPEC.md and CHANGELOG.md are linked at the tag and not published here. The
+ * site stopped publishing both (scripts/releases.mjs says why), and they are
+ * read in the repository as what they are.
+ */
+import Page from "../../layouts/Page.astro";
+import api from "../../generated/api.json";
+import install from "../../generated/install-targets.json";
+import { latestRelease } from "../../lib/release";
+
+const base = import.meta.env.BASE_URL;
+const release = latestRelease();
+const tree = `https://github.com/${install.repo}/blob/v${release.version}`;
+
+const local = [
+  {
+    href: `${base}docs/api/`,
+    name: "API reference",
+    what: `The ${api.prelude.length} prelude types and ${api.std.length} standard library modules of ${api.provenance.tag}, as <code>iyi doc</code> prints them: signatures and doc comments, no bodies.`,
+  },
+  {
+    href: `${base}docs/tools/`,
+    name: "Tools",
+    what: "After the install: start a project, build, test, format, check and fix it, and set up an editor, with each command's own help.",
+  },
+  {
+    href: `${base}docs/from-crystal/`,
+    name: "Coming from Crystal",
+    what: "What carries over from Crystal, what moved and the rule behind each move, and how to bring a project you already have.",
+  },
+  {
+    href: `${base}learn/`,
+    name: "Learn",
+    what: "The rules iyi adds, one lesson each, every lesson ending on the compiler refusing a program that breaks its rule.",
+  },
+  {
+    href: `${base}releases/`,
+    name: "Releases",
+    what: "What each release changed, newest first, in the changelog's own words.",
+  },
+];
+
+const repository = [
+  {
+    href: `${tree}/SPEC.md`,
+    name: "SPEC.md",
+    what: "The specification, as the repository keeps it.",
+  },
+  {
+    href: `${tree}/CHANGELOG.md`,
+    name: "CHANGELOG.md",
+    what: "Every release's notes, in full.",
+  },
+];
+---
+
+<Page
+  kind="CollectionPage"
+  title="Docs"
+  summary={`Where to read about iyi ${release.version}: the API reference for the prelude and the standard library, the tools, a guide for Crystal programmers, the lessons, the release notes, and the specification and changelog in the repository.`}
+>
+  <section class="wrap head">
+    <p class="label">Docs, version {release.version}</p>
+    <h1>What to read, and where it lives.</h1>
+  </section>
+
+  <section class="wrap">
+    <h2>On this site</h2>
+    <ul class="destinations">
+      {local.map((entry) => (
+        <li>
+          <a href={entry.href}>{entry.name}</a>
+          <span set:html={entry.what} />
+        </li>
+      ))}
+    </ul>
+
+    <h2>In the repository, at v{release.version}</h2>
+    <ul class="destinations">
+      {repository.map((entry) => (
+        <li>
+          <a href={entry.href}><code>{entry.name}</code></a>
+          <span>{entry.what}</span>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <style>
+    section {
+      padding-block: clamp(1.2rem, 2.5vw, 2rem);
+    }
+
+    .head {
+      padding-block-start: clamp(2.5rem, 5vw, 4rem);
+    }
+
+    .head h1 {
+      font-size: var(--step-3);
+      margin-block: 0.5rem 0;
+    }
+
+    h2 {
+      font-size: var(--step-1);
+      margin-block: 1.6rem 0.6rem;
+    }
+
+    /* One line per destination: the name, then what is there. A list rather
+     * than cards, because there is one sentence to say about each and a card
+     * would be furniture around it. */
+    .destinations {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-width: 72ch;
+    }
+
+    .destinations li {
+      display: grid;
+      grid-template-columns: minmax(9rem, 12rem) minmax(0, 1fr);
+      gap: 0.2rem 1.2rem;
+      padding-block: 0.7rem;
+      border-block-end: var(--hair) solid var(--hairline);
+    }
+
+    .destinations span {
+      color: var(--graphite);
+    }
+
+    @media (max-width: 40rem) {
+      .destinations li {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+  </style>
+</Page>

@@ -243,12 +243,20 @@ const rows = files(dist)
  * the whole site and a crawler is the only thing that fetches og.png. A row
  * over the lot is what catches a 282 KB favicon nobody looked at.
  *
+ * Documents are the pages and the text written for a reader that is not a
+ * browser: `llms.txt`, `llms-full.txt`, a lesson's `.md`, the sitemap and the
+ * release feed. No page view fetches them, and `llms-full.txt` carries every
+ * API surface the compiler prints, so charging them here would turn the row
+ * that catches a heavy favicon into a row that measures how much the
+ * reference says.
+ *
  * The wasm modules are out: the playground fetches one when a reader presses
  * Run, their sizes are what `records/` records and `scripts/records.mjs`
  * checks against the iyi tree, and at megabytes they would swamp every other
  * movement in this row. */
+const DOCUMENT = /\.(html|txt|md|xml)$/;
 const assets = files(dist)
-  .filter((f) => !f.endsWith(".html") && !relative(dist, f).startsWith("wasm"))
+  .filter((f) => !DOCUMENT.test(f) && !relative(dist, f).startsWith("wasm"))
   .reduce((sum, f) => sum + statSync(f).size, 0);
 
 /* ------------------------------------------------------------------------ */

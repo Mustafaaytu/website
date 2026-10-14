@@ -102,7 +102,7 @@ const ld = {
       url: Astro.site,
       name: siteName,
       description:
-        "iyi is a friendly, fast programming language for people and their agents, compatible with Crystal.",
+        "iyi is a compiled language whose modules compile against their dependencies' declarations, never their bodies, so a rebuild reads less and an agent reads an interface instead of a repository. Compatible with Crystal.",
       inLanguage: "en",
     },
     {
@@ -135,12 +135,30 @@ const ld = {
   ],
 };
 
+/* The sections, in the order a newcomer would want them: what it is, how to
+ * learn it, the runnable tour, the reference, then the agent and community
+ * pages, and installing last because it is the CTA every page already has.
+ * The tour lives at /playground/ because that is where it has always been
+ * linked from; the label is what a reader calls it. */
 const nav = [
   ["Why iyi", "why/"],
   ["Learn", "learn/"],
+  ["Tour", "playground/"],
+  ["Docs", "docs/"],
   ["Agents", "agents/"],
-  ["Playground", "playground/"],
+  ["Community", "community/"],
   ["Install", "install/"],
+];
+
+/* Off the site, and drawn as such: an edge around each says the press leaves
+ * iyi.dev. The package directory is the one README.md's badge and its
+ * "Looking for a package?" paragraph point to. Held in constants because the
+ * masthead and the footer both link them. */
+const packages = "https://iyipacks.mx.ee/";
+const github = "https://github.com/iyilang/iyi";
+const external = [
+  ["Packages", packages],
+  ["GitHub", github],
 ];
 
 const current = (path: string) => here.startsWith(href(path));
@@ -165,6 +183,7 @@ const current = (path: string) => here.startsWith(href(path));
     <link rel="apple-touch-icon" href={href("apple-touch-icon.png")} sizes="180x180" />
     <link rel="manifest" href={href("site.webmanifest")} />
     <link rel="sitemap" href={href("sitemap-index.xml")} />
+    <link rel="alternate" type="application/rss+xml" title="iyi releases" href={href("releases/feed.xml")} />
     <meta name="theme-color" content={token("paper")} media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content={token("paper-dark")} media="(prefers-color-scheme: dark)" />
     <meta property="og:type" content="website" />
@@ -275,9 +294,13 @@ const current = (path: string) => here.startsWith(href(path));
                 </li>
               ))
             }
-            <li class="nav-github">
-              <a href="https://github.com/iyilang/iyi">GitHub</a>
-            </li>
+            {
+              external.map(([label, url], i) => (
+                <li class:list={["nav-external", { "nav-external-first": i === 0 }]}>
+                  <a href={url}>{label}</a>
+                </li>
+              ))
+            }
           </ul>
         </nav>
       </div>
@@ -365,18 +388,15 @@ const current = (path: string) => here.startsWith(href(path));
               published there verbatim and checked byte for byte on every
               build. One copy, and a link to it.
 
-              The rule is put as the refusal it is, and in words the hero does
-              not already use: the hero says "declarations, never their
-              bodies" and "an interface instead of a repository", so a third
-              page-furniture copy of those two phrases would read as a
-              template. What a dependency declares against what it does is
-              the same rule said once. */}
+              The rule is said here in the words the home page's headline and
+              the why page's lead use, on purpose: a reader meets one sentence
+              about what iyi is wherever they arrive, and the two things that
+              follow from it are the two the rest of the site measures. */}
           <p>
-            iyi is Turkish for good. A fast, compiled language for developers
-            and the agents working beside them, built on a single refusal: a
-            module compiles against what its dependencies declare, never
-            against what they do. Quick builds and small binaries follow from
-            it.
+            iyi is Turkish for good. A compiled language whose modules compile
+            against their dependencies' declarations, never their bodies, so a
+            rebuild reads less and an agent reads an interface instead of a
+            repository.
           </p>
         </div>
         <nav class="colophon-links" aria-label="Footer">
@@ -388,7 +408,10 @@ const current = (path: string) => here.startsWith(href(path));
                 </li>
               ))
             }
-            <li><a href="https://github.com/iyilang/iyi">Source on GitHub</a></li>
+            <li><a href={href("releases/")}>Releases</a></li>
+            <li><a href={href("releases/feed.xml")}>Release feed (RSS)</a></li>
+            <li><a href={packages}>Packages</a></li>
+            <li><a href={github}>Source on GitHub</a></li>
             <li><a href={href("project/notice/")}>License and notices</a></li>
           </ul>
         </nav>
@@ -570,7 +593,12 @@ const current = (path: string) => here.startsWith(href(path));
         }
       }
 
-      @media (max-width: 52rem) {
+      /* The fold is wider than the 52rem every other layout on the site
+       * collapses at, because the bar is: seven sections and two external
+       * links need about 840px beside the wordmark and the switch, and a
+       * tablet between the two widths would otherwise wrap the sections onto
+       * a ragged second row under a bar that still looks unfolded. */
+      @media (max-width: 60rem) {
         .masthead[data-js="true"] .menu-toggle {
           display: inline-flex;
         }
@@ -623,7 +651,9 @@ const current = (path: string) => here.startsWith(href(path));
           font-size: var(--step-0);
         }
 
-        .nav-github {
+        /* Through the masthead, so it outranks the bar's own rule below,
+         * which the cascade would otherwise let win by coming later. */
+        .masthead .nav-external-first {
           margin-inline-start: 0;
           margin-block-start: 0.3rem;
         }
@@ -683,11 +713,11 @@ const current = (path: string) => here.startsWith(href(path));
         color: var(--brand-deep);
       }
 
-      .nav-github {
+      .nav-external-first {
         margin-inline-start: 0.5rem;
       }
 
-      .nav-github a {
+      .nav-external a {
         border: var(--hair) solid var(--hairline);
       }
 

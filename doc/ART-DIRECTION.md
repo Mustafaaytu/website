@@ -7,14 +7,21 @@ the other way, the reason it did not is written down. Rendered proof is in
 ## The concept
 
 **A plain, friendly site with a mascot, and every number on it checkable.**
-The one line above the fold says what iyi is for: a friendly, fast language for
-people and their agents. Beside it stands the mascot, a red heart with an `i`
-on each cheek, waving. Under it a real program, read out of the repository at
-build time, and the bytes the compiler printed when it ran that program. The
-site's job is to be readable in one pass by someone who has never heard of iyi,
-and to stay honest under the reader who checks: every figure on a page is
-either counted from the tree or stamped with the machine that measured it, and
-`scripts/no-transcription.mjs` fails the build if one is typed by hand.
+The one line above the fold says what is iyi's own: modules compile against
+declarations, never bodies. The footer, the why page and the two pages'
+summaries say it in the same words, because Crystal's motto is already "a
+language for humans and computers", and a tagline a reader has seen on the
+language iyi comes from tells them nothing about this one. Beside the line
+stands the mascot, a red heart with an `i` on each cheek, waving, and beside
+both the repository's own demonstration of the rule: README.md's first
+module, the file that imports it, and the session that builds them, deletes
+the library and builds again. Code is on the first screen of a desk and of a
+phone, because the first screen is where a reader decides whether this is a
+language worth reading. The site's job is to be readable in one pass by
+someone who has never heard of iyi, and to stay honest under the reader who
+checks: every figure on a page is either counted from the tree or stamped
+with the machine that measured it, and `scripts/no-transcription.mjs` fails
+the build if one is typed by hand.
 
 The look is deliberately unremarkable. White ground, a sans-serif, a mono for
 anything a machine printed, one accent, rounded cards, and nothing else. The
@@ -24,10 +31,10 @@ compete with it.
 ## The mascot
 
 `src/assets/mascot.png`, cut out of its background so it sits on the page
-ground in either scheme. It appears in four places and no more: large in the
-hero, small beside the wordmark in the header, at the foot of every page, and
-as the favicon, cropped to the face. It is
-never used as a bullet, a spinner, a badge or a reaction. The `i` on each
+ground in either scheme. It appears in four places and no more: in the hero,
+small enough that the code fits beside the headline, beside the wordmark in
+the header, at the foot of every page, and as the favicon, cropped to the face.
+It is never used as a bullet, a spinner, a badge or a reaction. The `i` on each
 cheek is the tittle, the dot that in Turkish orthography separates `i` from
 dotless `ı`; the same dot terminates every section rule on the site.
 
@@ -36,8 +43,10 @@ drawing is 1200px across; the header mark is 28px. Served out of `public/` it
 was the same file every time, so a reader paid the hero's weight to draw a mark
 the width of a word, four times a page. Through `astro:assets` each call site
 asks for the size it draws at, `densities={[1, 2]}` covers a retina screen, and
-the build emits exactly those. The hero keeps `fetchpriority="high"` because it
-is the largest thing painted above the fold; every other placement is lazy.
+the build emits exactly those. The hero's is eager, because it is above the
+fold, and no longer `fetchpriority="high"`: it was the largest thing painted
+there when it took half the screen, and the listing beside it is now. Every
+other placement is lazy.
 
 ## Palette
 

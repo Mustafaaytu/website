@@ -1,0 +1,293 @@
+---
+/**
+ * After the install: the verbs a project is made with, and an editor.
+ *
+ * Nothing on this page describes a command in this site's words. Each step
+ * opens on the line `iyi help` prints for its verb (`Usage`), shows the
+ * README's own commands for it (`Passage`), and quotes the verb's own help
+ * (`Lifted`), all read by scripts/tools.mjs out of the iyi tree at the release
+ * tag: the USAGE heredoc in src/compiler/iyi.cr, each verb's heredoc under
+ * src/compiler/iyi/command/, README.md and the editors guide. What is authored
+ * here is the order of the steps, their headings, and the sentence that links
+ * one step to the next page.
+ */
+import Page from "../../layouts/Page.astro";
+import Lifted from "../../components/Lifted.astro";
+import Passage from "../../components/Passage.astro";
+import Usage from "../../components/Usage.astro";
+import tools from "../../generated/tools.json";
+import { lessonHref, sequence } from "../../lib/lessons";
+import { latestRelease, releaseUrl } from "../../lib/release";
+
+const base = import.meta.env.BASE_URL;
+const release = latestRelease();
+
+if (tools.provenance.release !== release.version) {
+  throw new Error(
+    `docs/tools: scripts/tools.mjs read the tree at ${tools.provenance.tag} and ` +
+      `releases.json says ${release.version} is current. Run npm run generate.`,
+  );
+}
+
+/* A verb's own help, as the props `Lifted` sets it with. */
+type Help = { text: string; caption: string; cite: string; url: string };
+const help = (verb: string) => {
+  const found = (tools.verbs as Record<string, { help: Help }>)[verb];
+  if (!found) throw new Error(`docs/tools: scripts/tools.mjs reads no help for \`${verb}\``);
+  const { text, caption, cite, url } = found.help;
+  return { text, caption, cite, href: url };
+};
+
+const heading = (id: string): string => {
+  const found = (tools.passages as Record<string, { heading: string | null }>)[id]?.heading;
+  if (!found) throw new Error(`docs/tools: the passage "${id}" sits under no heading to set over it`);
+  return found;
+};
+
+/* The editors, in the guide's own order, each under the guide's own heading. */
+const editors = ["vscode", "vim", "neovim", "helix", "sublime", "zed"];
+
+const steps = [
+  { id: "project", title: "Start a project" },
+  { id: "run", title: "Write a module, then run it" },
+  { id: "build", title: "Build" },
+  { id: "test", title: "Test" },
+  { id: "format", title: "Format" },
+  { id: "check", title: "Check, then fix" },
+  { id: "doc", title: "Read a module's surface" },
+  { id: "dependencies", title: "Add a dependency" },
+  { id: "editors", title: "Set up an editor" },
+  { id: "agents", title: "Serve an agent" },
+  { id: "every-verb", title: "Every verb" },
+];
+
+const title = (id: string): string => {
+  const step = steps.find((candidate) => candidate.id === id);
+  if (!step) throw new Error(`docs/tools: no step "${id}" in the contents`);
+  return step.title;
+};
+
+/* The first lesson, by its own title, for the step that builds against an
+ * artifact with the library's source deleted, which is that lesson's subject. */
+const firstLesson = (await sequence())[0];
+---
+
+<Page
+  kind="TechArticle"
+  title="Tools: after the install"
+  summary={`Start an iyi project, run it, build, test, format, check, fix, read a module's surface, add a dependency and set up an editor. Every command and its help quoted from the iyi repository at ${tools.provenance.tag}.`}
+>
+  <section class="wrap head">
+    <p class="label">
+      <a href={`${base}docs/`}>Docs</a>, tools, <a href={releaseUrl(release)}>version {release.version}</a>
+    </p>
+    <h1>After the install.</h1>
+    <p class="lede">
+      Everything below is one binary, <code>{tools.programName}</code>. Each step
+      opens with the line <code>{tools.programName} help</code> prints for its
+      verb, then the commands as the repository writes them, then the verb's
+      own help. All of it is read out of the source of release{" "}
+      {release.version}, the one the <a href={`${base}install/`}>install page</a>{" "}
+      installs, with the file and lines it came from.
+    </p>
+    <nav class="contents" aria-label="On this page">
+      <ol>
+        {steps.map((step) => (
+          <li>
+            <a href={`#${step.id}`}>{step.title}</a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  </section>
+
+  <section class="wrap step" id="project">
+    <h2>{title("project")}</h2>
+    <Usage commands={["init"]} />
+    <Passage id="init_run" />
+    <Lifted {...help("init")} />
+  </section>
+
+  <section class="wrap step" id="run">
+    <h2>{title("run")}</h2>
+    <Usage commands={["run"]} />
+    <Passage id="first_module" />
+  </section>
+
+  <section class="wrap step" id="build">
+    <h2>{title("build")}</h2>
+    <Usage commands={["build"]} switches={["--release", "--no-codegen", "--emit-iyimod DIR", "--use-iyimod DIR"]} />
+    <Passage id="first_build" />
+    <p class="sub">
+      What that second build is reading, and why the language is built around
+      it, is the first lesson:{" "}
+      <a href={lessonHref(base, firstLesson)}>{firstLesson.data.title}</a>.
+    </p>
+  </section>
+
+  <section class="wrap step" id="test">
+    <h2>{title("test")}</h2>
+    <Usage commands={["test"]} />
+    <Lifted {...help("test")} />
+  </section>
+
+  <section class="wrap step" id="format">
+    <h2>{title("format")}</h2>
+    <Usage commands={["fmt"]} />
+    <Lifted {...help("fmt")} />
+  </section>
+
+  <section class="wrap step" id="check">
+    <h2>{title("check")}</h2>
+    <Usage commands={["check", "fix"]} />
+    <Lifted {...help("check")} />
+    <Lifted {...help("fix")} />
+  </section>
+
+  <section class="wrap step" id="doc">
+    <h2>{title("doc")}</h2>
+    <Usage commands={["doc"]} />
+    <Lifted {...help("doc")} />
+  </section>
+
+  <section class="wrap step" id="dependencies">
+    <h2>{title("dependencies")}</h2>
+    <Usage commands={["get", "mod"]} />
+    <Passage id="project" />
+    <Lifted {...help("get")} />
+    <Passage id="packages" />
+  </section>
+
+  <section class="wrap step" id="editors">
+    <h2>{title("editors")}</h2>
+    <Usage commands={["lsp"]} />
+    <Passage id="editors" />
+    {editors.map((id) => (
+      <div class="editor">
+        <h3>{heading(id)}</h3>
+        <Passage id={id} />
+        {id === "vim" && <Passage id="vim_install" />}
+      </div>
+    ))}
+    <Lifted {...help("lsp")} />
+  </section>
+
+  <section class="wrap step" id="agents">
+    <h2>{title("agents")}</h2>
+    <Usage commands={["mcp"]} />
+    <Lifted {...help("mcp")} />
+    <p class="sub">
+      The <a href={`${base}agents/`}>agents page</a> is a recording of the
+      compiler's verbs taking a project left broken on purpose to green.
+    </p>
+  </section>
+
+  <section class="wrap step" id="every-verb">
+    <h2>{title("every-verb")}</h2>
+    <p class="sub">
+      The whole of <code>{tools.programName} help</code>, which also names the
+      verbs this page has no step for.
+    </p>
+    <Lifted text={tools.usage.text} caption={`${tools.programName} help`} cite={tools.usage.cite} href={tools.usage.url} />
+  </section>
+
+  <section class="wrap step next" id="next">
+    <h2>Done installing?</h2>
+    <div class="hero-cta">
+      <a class="cta" href={`${base}learn/`}>Learn the rules</a>
+      <a class="cta ghost" href={`${base}playground/`}>Take the tour</a>
+      <a class="cta ghost" href={`${base}docs/`}>Read the docs</a>
+      <a class="cta ghost" href={`${base}docs/from-crystal/`}>Coming from Crystal</a>
+    </div>
+
+    <h2>Having trouble?</h2>
+    <p class="sub">The VS Code extension's README, on an editor that cannot find the compiler:</p>
+    <Passage id="trouble" />
+    <p class="sub">
+      Anything else goes to the <a href={tools.links.issues}>issue tracker</a>{" "}
+      of the <a href={tools.links.repository}>repository</a>, except a
+      vulnerability, which goes where the{" "}
+      <a href={`${base}project/security/`}>security policy</a> says.
+    </p>
+
+    <dl class="evidence">
+      <dt>read by</dt>
+      <dd>
+        {tools.provenance.generator} from {tools.provenance.repository} at{" "}
+        {tools.provenance.tag}, {tools.provenance.commit.slice(0, 9)}
+      </dd>
+    </dl>
+  </section>
+
+  <style>
+    section {
+      padding-block: clamp(1.2rem, 2.5vw, 2rem);
+    }
+
+    .head {
+      padding-block-start: clamp(2.5rem, 5vw, 4rem);
+    }
+
+    .head h1 {
+      font-size: var(--step-4);
+      margin-block: 0.5rem 0.8rem;
+    }
+
+    .lede {
+      color: var(--graphite);
+      max-width: 60ch;
+      margin-block-end: 1.2rem;
+    }
+
+    .contents ol {
+      margin: 0;
+      padding-inline-start: 1.4em;
+      columns: 2 14rem;
+      column-gap: 2rem;
+      color: var(--mute);
+    }
+
+    .contents li {
+      margin-block-end: 0.3rem;
+      break-inside: avoid;
+    }
+
+    .step {
+      scroll-margin-top: 4rem;
+    }
+
+    h2 {
+      font-size: var(--step-2);
+      margin-block-end: 0.8rem;
+    }
+
+    h3 {
+      font-size: var(--step-1);
+      margin-block: 1.4rem 0.6rem;
+    }
+
+    .sub {
+      color: var(--graphite);
+      max-width: 62ch;
+      margin-block: 0 1rem;
+    }
+
+    .step :global(.lifted) {
+      max-width: 62rem;
+    }
+
+    .next h2 + .hero-cta {
+      margin-block-end: 2rem;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+    }
+
+    .next {
+      padding-block-end: 3rem;
+    }
+  </style>
+</Page>
