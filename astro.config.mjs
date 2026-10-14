@@ -17,6 +17,13 @@ export default defineConfig({
   trailingSlash: "always",
   integrations: [mdx(), sitemap()],
 
+  // A lesson's URL is its file name, and a published URL outlives a rename:
+  // the old one answers with a page that sends the reader to the new one.
+  // `/learn/import-and-using/` named `using`, which iyi 0.15.0 removed.
+  redirects: {
+    "/learn/import-and-using/": "/learn/import/",
+  },
+
   // SmartyPants is on by default and it rewrites the text it renders: straight
   // quotes become curly, `...` becomes an ellipsis, and prose `--` becomes an
   // em dash. It is off because doc/ART-DIRECTION.md forbids an em dash and an
