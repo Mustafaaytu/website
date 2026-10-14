@@ -69,8 +69,8 @@ const out = resolve(site, "records", "wasm");
 // The script fails if a sample listed here now compiles, so this table cannot
 // go stale quietly either.
 const TASKS_ON_WASM =
-  "Tasks and channels run on Linux and macOS arm64 and nowhere else yet: a " +
-  "program that names `group` or `Channel` on wasm32 does not compile, " +
+  "Tasks and channels run on Linux, macOS arm64 and Windows x86-64, and not " +
+  "on wasm32 yet: a program that names `group` or `Channel` there does not compile, " +
   "because src/iyi/concurrency.iyi refuses to ship a spelling without the " +
   "feature (SPEC.md III.4.8).";
 const NATIVE_ONLY = {

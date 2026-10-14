@@ -69,9 +69,9 @@ is what an artifact needs.
 
 Two familiar shortcuts are closed. `include Greet` inside a struct does not work,
 because a type acquires a trait by having an impl whose location R-3 can check,
-and `include` has no such rule. `using` does not reach a trait's methods either:
-a trait exports no names, because a trait method resolves from the receiver
-rather than from your scope.
+and `include` has no such rule. An import's names do not reach a trait's methods
+either: a trait method resolves from the receiver rather than from your scope,
+so no import line can bring one in or shadow it.
 
 There is a nice side effect. Leave a requirement unmet and the error lands where
 you wrote the impl, not somewhere downstream where a caller trips over it. The

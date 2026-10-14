@@ -44,7 +44,7 @@ to a declaration, reads that declaration, and sees nothing global.
 <Sample path="samples/iyi/derive.iyi" region="struct Point" />
 
 `described` is an exported macro of `std/derives`, brought in with the same
-`import` and `using` from step three, because a derive macro arrives through
+`import` line as step three's, because a derive macro arrives through
 the ordinary exported macro table and nothing else. What it is handed is the
 declaration it sits in: the type's name, and each field written in the body
 with the type it was written as.

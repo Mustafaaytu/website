@@ -6,8 +6,6 @@
 # and `dep/loop_b` import each other.
 module diagnostics/r1_import_cycle
 
-import dep/loop_a
-
-using dep/loop_a
+import dep/loop_a::*
 
 puts a

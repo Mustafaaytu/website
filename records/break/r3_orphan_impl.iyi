@@ -5,11 +5,8 @@
 # what makes a type's method set knowable from its declarations alone.
 module diagnostics/r3_orphan_impl
 
-import dep/greeter
-import dep/user
-
-using dep/greeter
-using dep/user
+import dep/greeter::*
+import dep/user::*
 
 impl Greet for User
   def greet : String

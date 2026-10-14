@@ -3,8 +3,7 @@
 # `suggested_edit` with the exact replacement span and `iyi fix` applies it.
 module app
 
-import app/greeter
-using app/greeter
+import app/greeter::*
 
 pub def main : Int32
   puts polit("Türkiye")

@@ -13,7 +13,7 @@
 // The art direction answers a different question: which tokens are iyi's own
 // delta from Crystal, since that keyword set is the entire subject a reader
 // came for. So a span the lexer classed `k` whose text is exactly one of
-// iyi's ten rule words also gets `tok-rule`, and the site sets that at weight
+// iyi's nine rule words also gets `tok-rule`, and the site sets that at weight
 // 700 against 500 for an ordinary keyword. The two questions are separate, and
 // answering the second inside a hand-written grammar would have meant
 // answering the first one twice.
@@ -66,8 +66,8 @@ if (!Array.isArray(RULE_WORDS) || RULE_WORDS.length === 0) {
 if (typeof ruleWords.why !== "string" || ruleWords.why.trim() === "") {
   throw new Error(
     `src/lib/rule-words.json has no "why", and that field is where the ` +
-      `reason for this list lives. A list of ten words with no account of ` +
-      `why they are the ten is the shape that gets edited by guess.`,
+      `reason for this list lives. A list of nine words with no account of ` +
+      `why they are the nine is the shape that gets edited by guess.`,
   );
 }
 

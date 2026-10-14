@@ -68,11 +68,11 @@ const CASES = [
     expect: "must return Int32 but it is returning String",
   },
   {
-    id: "r2b-using-missing",
+    id: "r2b-name-not-imported",
     rule: "R-2b",
-    title: "an unqualified name with no using to bring it in",
-    file: "r2b_using_missing.iyi",
-    expect: "this file has not written `using`",
+    title: "an unqualified name no import brought in",
+    file: "r2b_name_not_imported.iyi",
+    expect: "this file has not brought it into",
   },
   {
     id: "r2c-outside-bound",

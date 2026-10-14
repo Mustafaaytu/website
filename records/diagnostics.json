@@ -1,10 +1,10 @@
 {
   "recorded": {
-    "compiler": "iyi 0.14.0 (built on Crystal 1.22.0-dev [3c508a7a9] (2026-09-22))",
-    "commit": "3c508a7a90ad8bc6972fd75192a875919574a4b3",
+    "compiler": "iyi 0.17.0 (built on Crystal 1.22.0-dev [fe3db8354] (2026-10-14))",
+    "commit": "fe3db8354f56ce84d411611d48e6dad235172275",
     "machine": "Linux 7.0.0-31-generic x86_64, QEMU Virtual CPU version 2.5+",
     "command": "npm run record:diagnostics",
-    "when": "2026-09-22T12:27:13.111Z"
+    "when": "2026-10-14T11:26:14.391Z"
   },
   "cases": [
     {
@@ -44,13 +44,13 @@
       "stderr": "Showing last frame. Use --error-trace for full trace.\n\nIn records/break/r2_wrong_return_type.iyi:6:41\n\n 6 | pub def total(numbers : Array(Int32)) : Int32\n                                             ^----\nError: method Diagnostics::R2WrongReturnType.total must return Int32 but it is returning String\n\nString is not in the declared type\n"
     },
     {
-      "id": "r2b-using-missing",
+      "id": "r2b-name-not-imported",
       "rule": "R-2b",
-      "title": "an unqualified name with no using to bring it in",
-      "path": "records/break/r2b_using_missing.iyi",
-      "command": "IYI_PATH=<iyi>/src iyi build --no-codegen --no-color records/break/r2b_using_missing.iyi",
+      "title": "an unqualified name no import brought in",
+      "path": "records/break/r2b_name_not_imported.iyi",
+      "command": "IYI_PATH=<iyi>/src iyi build --no-codegen --no-color records/break/r2b_name_not_imported.iyi",
       "exitCode": 1,
-      "stderr": "Showing last frame. Use --error-trace for full trace.\n\nIn records/break/r2b_using_missing.iyi:9:6\n\n 9 | puts polite(\"iyi\")\n          ^-----\nError: undefined method 'polite' for Diagnostics::R2bUsingMissing:Module\n\n`polite` is exported by `dep/greeter`, and this file has not written `using`. Add `using dep/greeter` to bring its names in unqualified, or call it as `Dep::Greeter.polite` (SPEC.md R-2b)\n"
+      "stderr": "Showing last frame. Use --error-trace for full trace.\n\nIn records/break/r2b_name_not_imported.iyi:10:6\n\n 10 | puts polite(\"iyi\")\n           ^-----\nError: undefined method 'polite' for Diagnostics::R2bNameNotImported:Module\n\n`polite` is exported by `dep/greeter`, and this file has not brought it into scope. Import it by name, `import dep/greeter::{polite}`, or call it as `Dep::Greeter.polite` (SPEC.md R-2b)\n"
     },
     {
       "id": "r2c-outside-bound",
@@ -68,7 +68,7 @@
       "path": "records/break/r3_orphan_impl.iyi",
       "command": "IYI_PATH=<iyi>/src iyi build --no-codegen --no-color records/break/r3_orphan_impl.iyi",
       "exitCode": 1,
-      "stderr": "Showing last frame. Use --error-trace for full trace.\n\nIn records/break/r3_orphan_impl.iyi:14:6\n\n 14 | impl Greet for User\n           ^\nError: can't implement Dep::Greeter::Greet for Dep::User::User in Diagnostics::R3OrphanImpl: an impl must live in the module that defines the trait (Dep::Greeter) or the module that defines the type (Dep::User). This is R-3, the orphan rule, and it is what lets coherence be checked without a global pass — see SPEC.md IV.4\n"
+      "stderr": "Showing last frame. Use --error-trace for full trace.\n\nIn records/break/r3_orphan_impl.iyi:11:6\n\n 11 | impl Greet for User\n           ^\nError: can't implement Dep::Greeter::Greet for Dep::User::User in Diagnostics::R3OrphanImpl: an impl must live in the module that defines the trait (Dep::Greeter) or the module that defines the type (Dep::User). This is R-3, the orphan rule, and it is what lets coherence be checked without a global pass — see SPEC.md IV.4\n"
     },
     {
       "id": "r3-unmet-trait-bound",

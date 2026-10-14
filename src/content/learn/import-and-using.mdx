@@ -1,27 +1,27 @@
 ---
-title: Two directives, and your own namespace
+title: One keyword, and your own namespace
 order: 3
-summary: "`import` loads a module and gives you its qualified name. `using` is what shortens that, and you write it, so no library can change what a name in your file means by adding an export of its own."
+summary: "`import` loads a module and gives you its qualified name. The list or the glob written after the path, `::{...}` or `::*`, is what shortens that, and you write it, so no library can change what a name in your file means by adding an export of its own."
 rule: R-2b
 sample: samples/iyi/modules.iyi
-breaks: r2b-using-missing
+breaks: r2b-name-not-imported
 breaksAlso:
   - records/break/dep/greeter.iyi
 bought: >-
-  Importing a module never changes what your unqualified names mean, so a library
+  A bare import never changes what your unqualified names mean, so a library
   cannot capture a name in your file by adding one to itself, and a local
-  definition beats a used one silently. Both are what make it safe to depend on a
-  module you do not control, which is the position every consumer of an artifact
-  is in.
+  definition beats an imported one silently. Both are what make it safe to depend
+  on a module you do not control, which is the position every consumer of an
+  artifact is in.
 sources:
   - file: samples/iyi/app/greeter.iyi
-    note: the module both directives name, exporting a `title`
+    note: the module both imports name, exporting a `title`
   - file: samples/iyi/app/formal.iyi
     note: the second module, exporting a `title` of its own
   - file: samples/iyi/modules.iyi
-    note: import, using, the selective form, and where an ambiguous name is reported
+    note: the glob, the list, and where an ambiguous name is reported
   - file: README.md
-    note: the diagnostic for the reverse mistake, quoted with its lines on the block
+    note: the diagnostic for a module this file never imported, quoted with its lines on the block
 ---
 
 import Sample from "../../components/Sample.astro";
@@ -29,54 +29,57 @@ import Quote from "../../components/Quote.astro";
 
 Two steps in, the library from step one has a shape: three definitions, two of
 them exported, all of their types written down. Bringing that into a file of your
-own takes two distinct directives.
+own takes one line, and the line says how much of it you want.
 
 <Sample
   path="samples/iyi/modules.iyi"
   from="module samples/modules"
-  to="using app/formal"
-  must="import app/greeter"
+  to="import app/formal::{address}"
+  must="import app/greeter::*"
 />
 
 `import` names a module and loads it at most once, so the import graph is a DAG
-rather than textual inclusion. What it gives you is the module under its
-qualified name and nothing more. After that line alone, `polite` is
+rather than textual inclusion. Written bare, `import app/greeter` gives you the
+module under its qualified name and nothing more: `polite` is
 `App::Greeter.polite` and nothing shorter.
 
-`using` is what shortens it, and you write it. The library does not get to. That
-is the whole of R-2b, and it is a smaller idea than it sounds: importing a module
-never changes what your unqualified names mean, so no library can capture a name
-in your file by adding one to itself.
+What you write after the path is what shortens it. `::*` brings every exported
+name, `::{...}` brings the ones listed, and the library does not get a say. That
+is the whole of R-2b, and it is a smaller idea than it sounds: a module's names
+reach your file only through a line in your file, and the glob is spelled out, so
+"every name" is visible on the line where it happens.
 
-The selective form on the last line is the interesting one. `app/greeter` and
+The list on the second line is the interesting one. `app/greeter` and
 `app/formal` both export `title`, so taking both whole would make every bare
 `title` in the file ambiguous. It takes exactly `address` from the second module
-and leaves that module's `title` behind. That selective import is a repair
-rather than mere tidiness.
+and leaves that module's `title` behind. That list is a repair rather than mere
+tidiness.
 
 ## Where the ambiguity gets reported
 
-Widen that second `using` to the whole module and nothing happens. Two modules
-exporting one name is not a mistake. The error arrives later, at the first bare
-`title` you write, because that is the first thing that could mean either.
+Widen that second import to `import app/formal::*` and nothing happens. Two
+modules exporting one name is not a mistake. The error arrives later, at the
+first bare `title` you write, because that is the first thing that could mean
+either.
 
 Then add your own `def title` to the file and it compiles again. A local
-definition beats a used one, silently. That silence is deliberate: it is what
-stops a library breaking your build by adding an export.
+definition beats an imported one, silently. That silence is deliberate: it is
+what stops a library breaking your build by adding an export.
 
-## The reverse mistake
+## The wall a qualified name does not climb
 
-The two directives are separate, so either can be the one you forgot. Write the
-`using` and leave out the `import`, and the compiler does not guess which module
-you meant:
+Qualifying a name is not a way around the import. Call `App::Greeter.polite`
+from a file that never imported `app/greeter`, because some other file in the
+program did, and the compiler does not let the rest of the program's imports
+leak into yours:
 
 <Quote id="import_missing" as="diagnostic" />
 
-It names the rule and writes out the line you meant. The rules are new, so the
-compiler teaches them at the moment they are broken, which is the only place a
-person is actually paying attention.
+It names the rule and both ways out. The rules are new, so the compiler teaches
+them at the moment they are broken, which is the only place a person is actually
+paying attention.
 
-## Now forget the other one
+## Now forget the names
 
-Do it the other way around. Import the module, and call one of its exported
+Do it the other way around. Import the module bare, and call one of its exported
 functions the way every other language would let you.

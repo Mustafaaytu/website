@@ -1,0 +1,10 @@
+# Breaks R-2b: a bare `import` brings a module into scope under its qualified
+# name and nothing more. Unqualified names arrive only through the list or the
+# glob on an import line, `::{...}` or `::*`, which the consumer writes, so
+# importing a module never quietly changes what a name in this file means.
+# `polite` is exported and still not in scope here.
+module diagnostics/r2b_name_not_imported
+
+import dep/greeter
+
+puts polite("iyi")

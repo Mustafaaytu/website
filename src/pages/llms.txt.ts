@@ -83,8 +83,8 @@ Site: ${origin}. Latest release: ${release.version}, ${release.date}.
 
 One rule, four sides. A module is the unit of compilation and it compiles
 against its dependencies' declarations, never their bodies (R-1). Everything a
-module exports writes its types down (R-2). \`using\` brings exported names into
-a file because that file asked (R-2b). There are no open classes; \`impl Trait
+module exports writes its types down (R-2). \`import x::{...}\` brings exported
+names into a file because that file asked (R-2b). There are no open classes; \`impl Trait
 for Type\` lives with the trait or the type (R-3).
 
 - Developer experience: change one line in a ${s.generated.toLocaleString("en-GB")}-line project of ${s.modules}

@@ -3,8 +3,8 @@
  * Code is the product, so this file carries more decisions than any other.
  *
  * The highlighting theory: emphasise exactly the tokens that are iyi's and not
- * Crystal's. `module`, `import`, `using`, `pub`, `trait`, `impl`, `forall`,
- * `derive`, `type` are the whole delta, and they are what a reader is here to
+ * Crystal's. `module`, `import`, `pub`, `trait`, `impl`, `forall`, `derive`,
+ * `type` are the whole delta, and they are what a reader is here to
  * see. Everything else is ink. There is no rainbow, because a rainbow would
  * spend attention on syntax that is not the argument.
  */
@@ -84,8 +84,8 @@
  * thing the signal colour means on this site, which is a loss or a caveat.
  * Syntax is never a loss. */
 
-/* THE ONE EMPHASIS THAT MATTERS. `module`, `import`, `using`, `pub`, `trait`,
- * `impl`, `forall`, `derive`, `type` and `abstract` are the entire delta
+/* THE ONE EMPHASIS THAT MATTERS. `module`, `import`, `pub`, `trait`, `impl`,
+ * `forall`, `derive`, `type` and `abstract` are the entire delta
  * between iyi and Crystal, and they are what a reader is here to see. The
  * lexer cannot make that distinction, because to a lexer they are all just
  * keywords, so `scripts/record-highlight.mjs` adds this class to those
@@ -93,7 +93,7 @@
  * class attribute and never a token boundary, so the emphasis cannot invent a
  * token the compiler did not see.
  *
- * Eight of the ten carry it. `forall` and `derive` are contextual keywords in
+ * Seven of the nine carry it. `forall` and `derive` are contextual keywords in
  * iyi's parser, matched on an identifier's value rather than lexed as
  * keywords, so the lexer emits them as bare text with no span at all and there
  * is nothing to add a class to. Deciding from the outside whether a bare
@@ -114,7 +114,7 @@
   color: var(--ink);
 }
 
-/* An ordinary Crystal keyword. Present, and quieter than the ten above. */
+/* An ordinary Crystal keyword. Present, and quieter than the nine above. */
 .k {
   font-weight: 500;
   color: var(--ink);

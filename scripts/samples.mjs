@@ -229,7 +229,6 @@ const WANTED = {
   the_rule: { lang: "console", anchor: "rm -r app" },
   library_deleted: { lang: "console", anchor: "rm -rf samples/iyi/kemal" },
   non_exhaustive: { lang: "console", anchor: "case is not exhaustive" },
-  using_missing: { lang: "console", anchor: "this file has not written `using`" },
   import_missing: { lang: "console", anchor: "is not imported here" },
   orphan_rule: { lang: "console", anchor: "an impl must live in the module" },
   kemal_site: { lang: "crystal", anchor: '"Hello from an iyi program"' },
