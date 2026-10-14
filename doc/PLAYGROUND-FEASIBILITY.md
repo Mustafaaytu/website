@@ -575,8 +575,8 @@ and `LibC.write`; only `open` raises. And `LibC.open` is bound for the target,
 24:  fun open(x0 : Char*, x1 : Int, ...) : Int
 ```
 
-An eight-line `open` in the shape of `src/crystal/event_loop/libevent.cr` line
-135 makes `File.read` work on wasm under the JS shim:
+An eight-line `open` in the shape of `src/crystal/event_loop/polling.cr` line
+168 makes `File.read` work on wasm under the JS shim:
 
 ```
 $ node runwasi.mjs fr3 hi.cr
