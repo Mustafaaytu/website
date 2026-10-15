@@ -121,23 +121,6 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
 ---
 
 <div class="wrap pg">
-  {/* The whole tour, as links rather than a select: each sample is a real
-      URL that resolves before any script runs, so a lesson's deep link works
-      with scripts off and survives being bookmarked. */}
-  <nav class="pg-side" aria-label="Tour">
-    {
-      tourSections.map((group) => (
-        <div>
-          <b>{group.title}</b>
-          {group.steps.map((item) => (
-            <a href={hrefOf(item.id)} aria-current={item.id === sample.id ? "page" : undefined}>
-              {item.id}
-            </a>
-          ))}
-        </div>
-      ))
-    }
-  </nav>
 
   <section class="bench" aria-label="Run a recorded program">
     <div class="pg-title">
@@ -243,6 +226,14 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
       recorded with {entry.recorded.compiler} · {entry.recorded.machine} · {entry.recorded.when.slice(0, 10)}
     </p>
 
+    <p class="small honest">
+      {
+        runs
+          ? "You can type in the pane: nothing here compiles, so what you type cannot run, and the page says which bytes it is running the moment the text stops being the recorded file. There is no standard input, no filesystem and no threads on this target, and one sample fails on purpose for exactly that reason."
+          : "This program does not compile for the browser's target, so this page shows what it printed when the compiler ran it natively, on the machine named above. You can still type in the pane, and the page will say when what is in it is no longer the file the recording is about."
+      }
+    </p>
+
     <p class="small foot" data-role="foot-recorded">
       {
         runnable(sample)
@@ -278,6 +269,25 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
       {next ? <a class="button button--ghost" href={hrefOf(next.id)}>Next: {next.id} →</a> : <span />}
     </nav>
   </section>
+
+  {/* After the bench in the source, so a keyboard reaches Run before the
+      thirty-odd links of the tour; drawn first by the grid. The whole tour, as links rather than a select: each sample is a real
+      URL that resolves before any script runs, so a lesson's deep link works
+      with scripts off and survives being bookmarked. */}
+  <nav class="pg-side" aria-label="Tour">
+    {
+      tourSections.map((group) => (
+        <div>
+          <b>{group.title}</b>
+          {group.steps.map((item) => (
+            <a href={hrefOf(item.id)} aria-current={item.id === sample.id ? "page" : undefined}>
+              {item.id}
+            </a>
+          ))}
+        </div>
+      ))
+    }
+  </nav>
 </div>
 
 <script>
@@ -744,6 +754,8 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
   }
 
   .pg-side {
+    grid-column: 1;
+    grid-row: 1;
     position: sticky;
     top: 80px;
     max-height: calc(100vh - 96px);
@@ -789,6 +801,10 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     .pg {
       grid-template-columns: minmax(0, 1fr);
     }
+    .bench {
+      grid-column: 1;
+      grid-row: 2;
+    }
     .pg-side {
       position: static;
       max-height: none;
@@ -811,6 +827,8 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
   }
 
   .bench {
+    grid-column: 2;
+    grid-row: 1;
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -1001,8 +1019,10 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     color: inherit;
   }
 
-  .stamp-line {
+  .stamp-line,
+  .honest {
     margin: -12px 0 0;
+    max-width: 760px;
   }
 
   .foot {

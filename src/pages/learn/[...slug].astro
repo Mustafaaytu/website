@@ -71,7 +71,11 @@ interface Props {
 }
 
 const { lesson, previous, next, total } = Astro.props;
-const { Content } = await render(lesson);
+const { Content, headings } = await render(lesson);
+
+/* The step's own sections, read off the rendered entry, so a contents entry
+ * and the heading it names cannot disagree. */
+const sections = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
 
 const base = import.meta.env.BASE_URL;
 const rules = rulesOf(lesson);
@@ -119,6 +123,18 @@ const steps = (await sequence()).map((step) => ({
         </p>
         <h1 class="h1">{lesson.data.title}</h1>
         <p class="lead" set:html={inlineMarkdown(lesson.data.summary)} />
+        {
+          sections.length > 0 && (
+            <nav class="toc" aria-label="In this step">
+              <span class="small">In this step</span>
+              {sections.map((heading) => (
+                <a href={`#${heading.slug}`} class:list={{ deep: heading.depth === 3 }}>
+                  {heading.text}
+                </a>
+              ))}
+            </nav>
+          )
+        }
       </header>
 
       <div class="lesson-body">
@@ -273,6 +289,33 @@ const steps = (await sequence()).map((step) => ({
   .lesson-head .small a {
     color: inherit;
     text-decoration: none;
+  }
+
+  .toc {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 14px;
+    padding-top: 4px;
+  }
+
+  .toc .small {
+    margin-right: 2px;
+  }
+
+  .toc a {
+    font-size: 14px;
+    color: var(--graphite);
+    text-decoration: none;
+    border-bottom: var(--hair) solid var(--boundary);
+  }
+
+  .toc a:hover {
+    color: var(--ink);
+  }
+
+  .toc a.deep {
+    color: var(--mute);
   }
 
   .lesson-body {

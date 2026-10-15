@@ -322,6 +322,14 @@
   text-decoration: none;
 }
 
+/* Where the row is wider than the screen the tabs wrap onto a second row
+ * rather than scrolling out of sight. */
+@media (max-width: 480px) {
+  .tabs {
+    flex-wrap: wrap;
+  }
+}
+
 .tabs [aria-selected="true"],
 .tabs [aria-current="page"] {
   color: var(--ink);
