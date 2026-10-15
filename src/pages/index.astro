@@ -9,7 +9,7 @@ import Quote from "../components/Quote.astro";
 import Platform from "../components/Platform.astro";
 import facts from "../generated/facts.json";
 import { tourSamples, runnable, playgroundHref } from "../playground/samples";
-import { latestRelease, releaseUrl, releaseAssets, windowsAsset } from "../lib/release";
+import { latestRelease, releaseAssets, windowsAsset } from "../lib/release";
 import platforms from "../generated/targets.json";
 import { SPELLED } from "../lib/lessons";
 import mascot from "../assets/mascot.png";
@@ -76,21 +76,25 @@ const windows = windowsAsset(release);
   <div class="wrap">
     <div class="hero-row">
     <section class="page-hero">
-      <p class="eyebrow">
-        <a href={releaseUrl(release)}>Version {release.version}</a> · {release.date}
-      </p>
       <h1 class="h1">A friendly, fast language for people and their agents.</h1>
       <p class="lead">
         iyi is a compiled language written for two readers: the person editing
         the code and the agent editing it beside them. One rule serves both. A
         module builds against its dependencies' declarations, never their
-        bodies, so a build reads less, a program carries less, and a model
-        reads an interface instead of a repository.
+        bodies, so:
       </p>
+      {/* The three consequences of the rule, as the sentence above lists
+          them, set so they read at a glance. */}
+      <ul class="follows">
+        <li>a build reads less</li>
+        <li>a program carries less</li>
+        <li>a model reads an interface instead of a repository</li>
+      </ul>
       <div class="btns">
-        <a class="button" href={`${base}install/`}>Install</a>
+        <a class="button" href={`${base}install/`}>Install {release.version}</a>
         <a class="button button--ghost" href={firstHref}>Try it in the browser</a>
       </div>
+
     </section>
     {/* The mascot, large, beside the one line. The largest thing painted above
         the fold, so it is eager and asks for priority. */}
@@ -117,6 +121,51 @@ const windows = windowsAsset(release);
       </p>
     </div>
 
+    <section class="sec">
+      <div class="sec__head">
+        <h2 class="h2">What iyi is for</h2>
+        <p class="p">Four things, and they are one design decision seen from four sides.</p>
+      </div>
+      <div class="grid4">
+        <a class="pillar" href={`${base}why/#dx`}>
+          <span class="big">{loop.claim.value}x</span>
+          <strong class="h3">Quick to rebuild</strong>
+          <span class="p">
+            Change one line in one module and build again. iyi reads the
+            declarations of everything else and none of the bodies.
+          </span>
+          <span class="link red">Why it is fast →</span>
+        </a>
+        <a class="pillar" href={`${base}agents/`}>
+          <span class="big">{pack.tokens_low}–{pack.tokens_high}%</span>
+          <strong class="h3">Made for agents</strong>
+          <span class="p">
+            Fewer prompt tokens for the same edit, because a module's interface
+            is a file and not a convention.
+          </span>
+          <span class="link red">The loop, recorded →</span>
+        </a>
+        <a class="pillar" href={`${base}why/#portability`}>
+          <span class="big"><Measure of="targets" /></span>
+          <strong class="h3">Portable</strong>
+          <span class="p">
+            An iyi program compiles for <Measure of="targets" /> targets, and
+            is run on {ranCount} of them on every build, including {wasm}.
+          </span>
+          <span class="link red">How the playground runs →</span>
+        </a>
+        <a class="pillar" href={`${base}why/#performance`}>
+          <span class="big">{massRatio}x</span>
+          <strong class="h3">Small and quick to start</strong>
+          <span class="p">
+            Native code through LLVM, and a program links only what it uses. A
+            hello world is {massRatio}x smaller than with Crystal's library.
+          </span>
+          <span class="link red">The numbers →</span>
+        </a>
+      </div>
+    </section>
+
     <section class="sec split">
       <div class="sec__head">
         <h2 class="h2">Try iyi</h2>
@@ -132,6 +181,7 @@ const windows = windowsAsset(release);
         <div class="console">
           <div class="console-chrome">
             <span class="caption">output</span>
+            <a class="copy run-here" href={firstHref}>Run it in the browser ▸</a>
           </div>
           <pre><span class="out">{first.nativeStdout}</span></pre>
         </div>
@@ -202,7 +252,9 @@ const windows = windowsAsset(release);
         </p>
         <p class="p">
           The listing is a Kemal server written as an iyi module, and the
-          console under it is that server answering.
+          console under it is that server answering. What iyi adds is one
+          rule about where things may be written, and the compiler teaches it
+          as you go.
         </p>
       </div>
       <div>
@@ -234,50 +286,6 @@ const windows = windowsAsset(release);
       </div>
     </section>
 
-    <section class="sec">
-      <div class="sec__head">
-        <h2 class="h2">What iyi is for</h2>
-        <p class="p">Four things, and they are one design decision seen from four sides.</p>
-      </div>
-      <div class="grid4">
-        <a class="pillar" href={`${base}why/#dx`}>
-          <span class="big">{loop.claim.value}x</span>
-          <strong class="h3">Quick to rebuild</strong>
-          <span class="p">
-            Change one line in one module and build again. iyi reads the
-            declarations of everything else and none of the bodies.
-          </span>
-          <span class="link red">Why it is fast →</span>
-        </a>
-        <a class="pillar" href={`${base}agents/`}>
-          <span class="big">{pack.tokens_low}–{pack.tokens_high}%</span>
-          <strong class="h3">Made for agents</strong>
-          <span class="p">
-            Fewer prompt tokens for the same edit, because a module's interface
-            is a file and not a convention.
-          </span>
-          <span class="link red">The loop, recorded →</span>
-        </a>
-        <a class="pillar" href={`${base}why/#portability`}>
-          <span class="big"><Measure of="targets" /></span>
-          <strong class="h3">Portable</strong>
-          <span class="p">
-            An iyi program compiles for <Measure of="targets" /> targets, and
-            is run on {ranCount} of them on every build, including {wasm}.
-          </span>
-          <span class="link red">How the playground runs →</span>
-        </a>
-        <a class="pillar" href={`${base}why/#performance`}>
-          <span class="big">{massRatio}x</span>
-          <strong class="h3">Small and quick to start</strong>
-          <span class="p">
-            Native code through LLVM, and a program links only what it uses. A
-            hello world is {massRatio}x smaller than with Crystal's library.
-          </span>
-          <span class="link red">The numbers →</span>
-        </a>
-      </div>
-    </section>
 
   </div>
 
@@ -285,6 +293,10 @@ const windows = windowsAsset(release);
     .eyebrow a {
       color: inherit;
       text-decoration: none;
+    }
+
+    .hero-row :global(.page-hero) {
+      padding-top: clamp(32px, 4vw, 48px);
     }
 
     .hero-row {
@@ -296,7 +308,7 @@ const windows = windowsAsset(release);
 
     /* Centred on the copy, not on the section's padding above it. */
     .hero-art {
-      padding-top: clamp(48px, 7vw, 80px);
+      padding-top: clamp(32px, 4vw, 48px);
     }
 
     .hero-art :global(img) {
@@ -314,6 +326,38 @@ const windows = windowsAsset(release);
       .hero-art {
         display: none;
       }
+    }
+
+    .follows {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 18px;
+      font-size: clamp(16px, 1.5vw, 18px);
+      line-height: 1.5;
+      color: var(--ink);
+    }
+
+    .follows li {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .follows li::before {
+      content: "";
+      flex: none;
+      width: 6px;
+      height: 6px;
+      transform: translateY(-2px);
+      border-radius: 50%;
+      background: var(--brand);
+    }
+
+    .run-here {
+      text-decoration: none;
     }
 
     .rebuild-wrap {
