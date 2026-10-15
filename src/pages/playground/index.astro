@@ -60,7 +60,7 @@ const first = tourSamples[0];
     </section>
 
     <section class="sec">
-      <TourGrid variant="list" />
+      <TourGrid variant="list" heading="h2" />
       <div class="track-foot">
         <p class="p">
           Done with the tour? <a href={lessonHref(base, firstLesson)}>Learn the
@@ -72,7 +72,10 @@ const first = tourSamples[0];
           compiler built for it, checked against its recording before it
           starts. A step marked native uses tasks, which the browser's target
           cannot run yet, so it shows what the program printed natively
-          instead.{" "}
+          instead. You can type in any of the panes, and the page says which
+          bytes a run will use the moment what is in one stops being the
+          recorded file, because nothing on these pages compiles what you
+          type.{" "}
           <a href={`${base}playground/evidence/`}>How this works</a>
         </p>
       </div>

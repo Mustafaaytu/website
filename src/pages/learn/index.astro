@@ -169,7 +169,8 @@ const further = [
       <p class="p">
         Each step opens with the rule in the specification's own words, shows
         the program it is grounded in, breaks the rule on purpose, and prints
-        what the compiler said. Every error is a recording of a real run.
+        what the compiler said. Every listing is read out of the repository
+        when the page is built, and every error is a recording of a real run.
       </p>
       <div class="btns">
         <a class="button" href={first.href}>Start at step one →</a>
@@ -256,7 +257,7 @@ const further = [
           read as the reason.
         </p>
       </div>
-      <TourGrid variant="chips" />
+      <TourGrid variant="chips" heading="h3" />
       <div class="track-foot">
         {
           nativeIds.length > 0 ? (

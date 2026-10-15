@@ -131,14 +131,18 @@ const tarballs = assets.map((asset) => asset.target).join(" or ");
             <strong>Nothing to configure.</strong>
             <span class="p">
               LLVM is inside the binary. What no archive brings is a C
-              toolchain: a program is linked by cc, and on Windows by cl.exe.
+              toolchain: a program is linked by cc, and on Windows by cl.exe,
+              so that machine needs the Visual C++ build tools. The compiler
+              finds them and the Windows SDK through the registry, so no
+              developer prompt and nothing on PATH is needed, and the
+              installer says so when the toolset is missing.
             </span>
           </li>
         </ul>
       </div>
     </section>
 
-    <section class="sec">
+    <section class="sec" id="install-by-hand">
       <div class="sec__head">
         <h2 class="h2">By hand</h2>
         <p class="p">

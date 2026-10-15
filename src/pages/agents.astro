@@ -19,6 +19,8 @@ import Measure from "../components/Measure.astro";
 import facts from "../generated/facts.json";
 import record from "../../records/agent.json";
 import mascot from "../assets/mascot.png";
+import Stamped from "../components/Stamped.astro";
+import { SPELLED } from "../lib/lessons";
 
 const base = import.meta.env.BASE_URL;
 const pack = facts.recorded.context_pack;
@@ -185,9 +187,10 @@ const diffs = [
         </p>
         <h1 class="h1">Your agent reads the interface, not the repository.</h1>
         <p class="lead">
-          When it's wrong, the compiler hands it the fix. iyi holds this by
-          language rule: a module compiles against what its dependencies
-          declare, so a model can work from declarations alone.
+          When it's wrong and the compiler knows the fix, the verdict carries
+          it. iyi holds this by language rule: a module compiles against what
+          its dependencies declare, so a model can read an interface without
+          the repository.
         </p>
       </div>
 
@@ -207,7 +210,7 @@ const diffs = [
             <span>
               <i class="race-dot" data-dot data-done="true"></i>
               <span class="race-title">same task, both arms</span>
-              <span>fix one misspelled call</span>
+              <span>{facts.structural.modules} modules · {facts.structural.generated.toLocaleString("en-GB")} lines</span>
             </span>
             <button type="button" class="race-replay" data-replay>
               <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M10 6a4 4 0 1 1-1.2-2.85M10 1.5v2.2H7.8" /></svg>
@@ -308,9 +311,12 @@ const diffs = [
               {step.runs.map((r) => (
                 <div class="run">
                   <div class="run-head">
-                    <span>
+                    <span class="run-cmd">
                       <span class="faint">$ </span>
                       {r.command}
+                      <button type="button" class="copy" data-copy={r.command} aria-label="Copy the command">
+                        Copy
+                      </button>
                     </span>
                     <span>
                       <span>{r.label}</span>
@@ -345,6 +351,32 @@ const diffs = [
           <button type="button" class="button button--ink next" data-next>Next step →</button>
         </div>
       </div>
+    </section>
+
+    <section class="sec split" id="servers">
+      <div class="sec__head">
+        <h2 class="h2">The servers are in the binary.</h2>
+        <p class="p">
+          There is nothing to install and no second implementation to keep in
+          step. <code>iyi lsp</code> speaks the Language Server Protocol to an
+          editor and <code>iyi mcp</code> serves{" "}
+          {record.wire.tools.map((tool, i) => (
+            <>{i === 0 ? "" : i === record.wire.tools.length - 1 ? " and " : ", "}<code>{tool}</code></>
+          ))}{" "}
+          as Model Context Protocol tools to a harness, both over stdio, and
+          both are shells around the same front end a build uses. So there is
+          no agent mode and no forked behavior: same verb, same file, two
+          doors.
+        </p>
+      </div>
+      <Stamped
+        claim="Byte for byte the same answer through both doors."
+        band="Compared on every recording, and the record is refused when they differ."
+        subject="iyi check -f json in a shell, against the check tool over MCP stdio"
+        outcome="win"
+      >
+        <p>identical: {String(record.wire.identical)} · bytes: {record.wire.bytes}</p>
+      </Stamped>
     </section>
 
     <section class="sec" id="diff">
@@ -401,9 +433,11 @@ const diffs = [
       <div class="sec__head">
         <h2 class="h2">How the numbers were measured.</h2>
         <p class="p">
-          The saving is a property of scale, so it is measured on the
-          repository's own <Measure of="modules" />-module project, by a gate
-          that runs both arms.
+          On {SPELLED[record.project.length]} modules a pack is no smaller than
+          the sources it stands in for. The saving is a property of scale, so
+          it is measured where scale exists: the repository's own{" "}
+          <Measure of="generated" />-line project of <Measure of="modules" />{" "}
+          modules, by a gate that runs both arms.
         </p>
         <p class="p note">
           The project is <code>records/agent/</code> in this site's
@@ -434,7 +468,9 @@ const diffs = [
 
   <script>
     import { wireAgentsPage } from "../lib/agents-page";
+    import { wireCopyButtons } from "../lib/copy";
     wireAgentsPage();
+    wireCopyButtons();
   </script>
 
   <style>
@@ -842,6 +878,30 @@ const diffs = [
       grid-column: 2;
     }
 
+    /* On a phone the four steps sit two by two rather than scrolling
+     * sideways out of sight. */
+    @media (max-width: 640px) {
+      #loopbox[data-js="true"] .loop-tabs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .loop-tabs button {
+        min-width: 0;
+        border-bottom: var(--hair) solid var(--hairline);
+      }
+    }
+
+    .run-cmd {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .run-cmd .copy {
+      margin-inline-start: 4px;
+    }
+
     /* With the script, one step at a time behind tabs; without it, the four
      * steps one after another, each under its own title. */
     .loop[data-js="true"] .loop-tabs {
@@ -1134,7 +1194,7 @@ const diffs = [
     .verdict .mono {
       margin-left: auto;
       font-size: 12px;
-      color: var(--mute);
+      color: var(--graphite);
     }
 
     /* The receipt ------------------------------------------------------- */

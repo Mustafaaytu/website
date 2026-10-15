@@ -174,12 +174,14 @@ function wireRace(race: HTMLElement, goStep: (step: number) => void) {
     else if (b.dataset.goto !== undefined) goStep(Number(b.dataset.goto));
   });
 
-  race.dataset.js = "true";
+  /* Under reduced motion there is nothing to replay, so the control is not
+   * offered: the race stays at its finished state. */
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
     t = 1;
     tick();
     return;
   }
+  race.dataset.js = "true";
 
   /* One run, then the finished result stays. A replay that loops reads as
    * decoration; Replay runs it again. */

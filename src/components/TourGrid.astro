@@ -16,9 +16,12 @@ import { inlineMarkdown } from "../lib/lessons";
 
 interface Props {
   variant?: "chips" | "list";
+  /** The level the section titles take on the page they sit in. */
+  heading?: "h2" | "h3";
 }
 
-const { variant = "list" } = Astro.props;
+const { variant = "list", heading = "h2" } = Astro.props;
+const Title = heading;
 const base = import.meta.env.BASE_URL.replace(/\/*$/, "/");
 
 const blurbOf = (path: string) => recordedText(path).split("\n")[0].replace(/^#\s*/, "");
@@ -46,7 +49,7 @@ const sections = tourSections.map((section, i) => ({
         <div class="track-ch">
           <span class="track-no">{section.no}</span>
           <div>
-            <strong>{section.title}</strong>
+            <Title class="track-title">{section.title}</Title>
             <span>{section.blurb}</span>
           </div>
         </div>
@@ -133,7 +136,11 @@ const sections = tourSections.map((section, i) => ({
     gap: 3px;
   }
 
-  .track-ch strong {
+  .track-title {
+    margin: 0;
+  }
+
+  .track-ch .track-title {
     font-weight: 650;
     font-size: 16.5px;
     letter-spacing: -0.01em;

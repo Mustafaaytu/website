@@ -7,6 +7,7 @@ import DurationChart from "../components/DurationChart.astro";
 import Quote from "../components/Quote.astro";
 import facts from "../generated/facts.json";
 import platforms from "../generated/targets.json";
+import proofs from "../generated/proofs.json";
 import { SPELLED } from "../lib/lessons";
 import mascot from "../assets/mascot.png";
 
@@ -16,6 +17,7 @@ const bin = facts.recorded.hello_binary;
 const front = facts.recorded.front_end;
 const pack = facts.recorded.context_pack;
 const runtime = facts.recorded.runtime;
+const lib = facts.recorded.library_size;
 
 const ratios = loop.ratios as number[];
 const loopBand = `${Math.min(...ratios).toFixed(2)}x to ${Math.max(...ratios).toFixed(2)}x across ${loop.sessions.length} published sessions. The seconds moved; the ratio held, which is why the ratio is the claim.`;
@@ -42,6 +44,16 @@ const targets = [
   ...platforms.typechecked.filter((t) => !ran.has(t)),
 ];
 const ranCount = SPELLED[platforms.ran.length] ?? String(platforms.ran.length);
+const ranHow = platforms.ran.map((t) => platforms.how[t as keyof typeof platforms.how]);
+
+/* The object audit and the Windows jobs, as the live page states them: the
+ * audit count and its exceptions read out of README.md by
+ * scripts/targets.mjs, the Windows jobs counted out of the workflow by
+ * scripts/proofs.mjs, so neither is typed here. */
+const auditedCount = SPELLED[platforms.audited.length] ?? String(platforms.audited.length);
+const exempt = platforms.auditExempt;
+const onWindows = proofs.native.filter((job) => job.os === "windows");
+const gatedOnWindows = onWindows.filter((job) => proofs.gate.needs.includes(job.id));
 
 /* The modules a rebuild did not read: the bench project's module count, less
  * the one whose line changed, spelled through the same table as the rest of
@@ -134,8 +146,8 @@ const shards = ["kemal", "db", "ameba", "sqlite3"];
         <h2 class="h2">What moved, and why.</h2>
         <p class="p">
           The syntax is Crystal's. What moved is where things may be written.
-          Macros, nil, union types, blocks and local inference are kept
-          unchanged.
+          Macros are kept, and they travel in the artifact; nil, union types,
+          blocks and local inference are kept, unchanged.
         </p>
       </div>
       <ol class="moves">
@@ -200,11 +212,16 @@ const shards = ["kemal", "db", "ameba", "sqlite3"];
 
     <section class="sec split" id="ai">
       <div class="sec__head">
-        <p class="eyebrow">2 · AI experience</p>
+        <p class="eyebrow">
+          {/* The address this section had before the redesign, kept so a
+              link to it still lands here. Inline and empty, so it takes no
+              cell of the grid. */}
+          <span id="aix"></span>2 · AI experience
+        </p>
         <h2 class="h2">A compiler built to be an agent's tool, not wrapped as one.</h2>
         <p class="p">
-          A <code>.iyimod</code> holds a module's declarations, every type
-          written down. A tool can read exactly what a module offers without
+          A <code>.iyimod</code> holds a module's declarations, with every type
+          written down, and its machine code. A tool can read exactly what a module offers without
           the repository, and check a change against it without building the
           world.
         </p>
@@ -213,6 +230,11 @@ const shards = ["kemal", "db", "ameba", "sqlite3"];
           Rename a local and the interface is unchanged.{" "}
           <code>--exit-code</code> makes that a branch in a script, or in an
           agent's plan.
+        </p>
+        <p class="p">
+          The mechanism is built and the claim is young. If the rules turn out
+          not to be enough for agents, that is a thing to measure rather than
+          to promise.
         </p>
         <a class="link" href={`${base}agents/`}>See the agent loop, recorded →</a>
       </div>
@@ -228,9 +250,24 @@ const shards = ["kemal", "db", "ameba", "sqlite3"];
           push, and runs {ranCount}: the check is that they print what the
           same program printed where it was compiled. The wasm32 build is one
           self-contained module, which is why the{" "}
-          <a href={`${base}playground/`}>tour</a> runs in your browser. The{" "}
-          <a href={`${base}targets/`}>platforms page</a> names every job with
-          its lines.
+          <a href={`${base}playground/`}>tour</a> runs in your browser.
+        </p>
+        <p class="p">
+          The {ranCount} that run are {ranHow.join(", ")}. Of the{" "}
+          <Measure of="targets" />, {auditedCount} have the object they emit
+          audited for what it asks the machine for;{" "}
+          {
+            exempt.map((t, i) => (
+              <>{i === 0 ? "" : i === exempt.length - 1 ? " and " : ", "}<code>{t}</code></>
+            ))
+          }{" "}
+          are not. Windows is not in the {ranCount}, and is no longer only
+          compiled for either: {onWindows.length} jobs execute on a Windows
+          machine every build, and{" "}
+          {gatedOnWindows.length === onWindows.length ? "every one" : `${gatedOnWindows.length} of them`}{" "}
+          is on the list a tag waits for, so a failure there stops a release.
+          The <a href={`${base}targets/`}>platforms page</a> names them with
+          their lines.
         </p>
       </div>
       <ul class="targets">
@@ -250,9 +287,12 @@ const shards = ["kemal", "db", "ameba", "sqlite3"];
         <p class="eyebrow">4 · Performance and efficiency</p>
         <h2 class="h2">Native code, a small program, and a front end that answers before you notice.</h2>
         <p class="p">
-          iyi generates native code through LLVM. What changes is what a
-          program carries: it links only what it uses, and iyi's own library
-          is <Measure of="prelude_kb" unit="KB" /> on disk beside the binary.
+          iyi generates native code through LLVM. At run time the two
+          libraries are within noise where they do the same work. What changes
+          is what a program carries: it links only what it uses, and iyi's own
+          library is <Measure of="prelude" /> lines against Crystal's{" "}
+          {lib.crystal.toLocaleString("en-GB")}, <Measure of="prelude_kb" unit="KB" />{" "}
+          on disk beside the binary.
         </p>
       </div>
       <div class="split">
@@ -299,19 +339,32 @@ const shards = ["kemal", "db", "ameba", "sqlite3"];
           <Stamped claim={`${stringRow.gc_off.toFixed(2)}x slower`} subject={`where it loses · ${runtime.subject}`} outcome="loss">
             <p>
               at building strings, with the collector off. As it runs, the same
-              workload is {stringRow.as_it_runs.toFixed(2)}x, within noise. Cold
-              builds of unseen code are slower; the speed is on the edit loop.
+              workload is {stringRow.as_it_runs.toFixed(2)}x, within noise. The
+              collector masks a slower builder. Cold builds of unseen code are
+              slower; the speed is on the edit loop.
             </p>
           </Stamped>
         </div>
       </div>
+      <p class="p young">
+        Young parts, named: iyi's own prelude carries the small-tool floor and
+        no more, so it has no TLS and no serialization, and sockets and format
+        strings live in <code>std/socket</code> and <code>std/format</code>,{" "}
+        outside the prelude every program carries; concurrency runs on Linux,
+        macOS arm64 and Windows x86-64, and wasm32 gets no runtime at all
+        rather than a sequential imitation of one; dependencies resolve and
+        pin, but there is no registry and no artifact distribution yet, and{" "}
+        <code>--crystal</code> still leans on shards.
+      </p>
     </section>
 
     <section class="sec cta-band">
       <h2 class="h2">Check it yourself.</h2>
       <p class="p">
-        Every number above is counted from the tree, or recorded with the
-        command that prints it and the machine it ran on.
+        Every number above is one of two things: counted from the tree, where
+        it is the same on your machine as on ours, or recorded, in which case
+        it carries the command that prints it and, where the number is a
+        duration, the machine it ran on.
       </p>
       <div class="btns">
         <a class="button" href={`${base}playground/`}>Open the tour</a>
@@ -647,6 +700,11 @@ const shards = ["kemal", "db", "ameba", "sqlite3"];
       flex-direction: column;
       gap: 16px;
       min-width: 0;
+    }
+
+    .young {
+      max-width: 760px;
+      font-size: 15px;
     }
 
     .cta-band {
