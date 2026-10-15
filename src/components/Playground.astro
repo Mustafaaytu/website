@@ -150,28 +150,17 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     </div>
 
     <div class="pg-card">
-      <figure class="source pane-listing">
-        <figcaption class="source-head">
-          <span class="path">
-            {sample.path} · {runnable(sample) ? `${sample.wasm} · ${Math.round(sample.bytes / 1024)} KB` : "native only"}
-          </span>
-          <button type="button" class="copy" data-copy={source} aria-label="Copy the program">
-            Copy
-          </button>
-        </figcaption>
-        <pre
-          class="listing"
-          style={`--lines: ${lineCount}`}
-          contenteditable="plaintext-only"
-          spellcheck="false"
-          role="textbox"
-          aria-multiline="true"
-          tabindex="0"
-          aria-label={`iyi source, ${sample.path}, editable`}
-          data-role="pane"
-          set:html={seedInk}
-        />
-      </figure>
+      {/* The file and the controls first, so Run is where the eye starts on
+          any length of program; then the program and what it printed side by
+          side on a wide screen, the way a reader compares them. */}
+      <div class="source-head">
+        <span class="path">
+          {sample.path} · {runnable(sample) ? `${sample.wasm} · ${Math.round(sample.bytes / 1024)} KB` : "native only"}
+        </span>
+        <button type="button" class="copy" data-copy={source} aria-label="Copy the program">
+          Copy
+        </button>
+      </div>
 
       <div class="bar" data-entry={JSON.stringify(entry)}>
         <div class="bar-actions">
@@ -205,20 +194,37 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
         </div>
       </div>
 
-      <div class="console pane-output" data-role="output">
-        <div class="console-chrome">
-          <span class="caption">{runs ? "output" : "recorded output"}</span>
+      <div class="panes">
+        <figure class="source pane-listing" aria-label={sample.path}>
+          <pre
+            class="listing"
+            style={`--lines: ${lineCount}`}
+            contenteditable="plaintext-only"
+            spellcheck="false"
+            role="textbox"
+            aria-multiline="true"
+            tabindex="0"
+            aria-label={`iyi source, ${sample.path}, editable`}
+            data-role="pane"
+            set:html={seedInk}
+          />
+        </figure>
+
+        <div class="console pane-output" data-role="output">
+          <div class="console-chrome">
+            <span class="caption">{runs ? "output" : "recorded output"}</span>
+          </div>
+          {
+            runs ? (
+              <pre class="out idle">Press Run.</pre>
+            ) : (
+              <Fragment>
+                <pre class="out">{sample.nativeStdout}</pre>
+                <pre class="stamp">exit {sample.exitCode}, on {entry.recorded.machine}</pre>
+              </Fragment>
+            )
+          }
         </div>
-        {
-          runs ? (
-            <pre class="out idle">Press Run.</pre>
-          ) : (
-            <Fragment>
-              <pre class="out">{sample.nativeStdout}</pre>
-              <pre class="stamp">exit {sample.exitCode}, on {entry.recorded.machine}</pre>
-            </Fragment>
-          )
-        }
       </div>
 
       {/* The same line for the same page once the pane stops holding the file
@@ -712,6 +718,20 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
   })();
 </script>
 
+
+<script>
+  /* Where the program and its output are stacked, a run can print below the
+   * fold. When the output changes and none of it is on screen, bring it into
+   * view; where it sits beside the program this never fires. Smooth or not is
+   * the page's own scroll behaviour, which reduced motion already turns off. */
+  const output = document.querySelector<HTMLElement>('[data-role="output"]');
+  if (output) {
+    new MutationObserver(() => {
+      const box = output.getBoundingClientRect();
+      if (box.top >= innerHeight || box.bottom <= 0) output.scrollIntoView({ block: "nearest" });
+    }).observe(output, { childList: true, subtree: true, characterData: true });
+  }
+</script>
 <style>
   /* The tour down the side and the program beside it. Below the breakpoint the
    * side becomes a row of chips that scrolls, above the program. */
@@ -828,10 +848,36 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     overflow: hidden;
   }
 
+  .pg-card > .source-head {
+    border-bottom: var(--hair) solid var(--hairline);
+  }
+
+  .panes {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Program left, output right, where there is room for both to be read. */
+  @media (min-width: 1100px) {
+    .panes {
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    }
+    .panes .pane-output {
+      border-left: var(--hair) solid var(--hairline);
+    }
+  }
+
+  @media (max-width: 1099px) {
+    .panes .pane-output {
+      border-top: var(--hair) solid var(--hairline);
+    }
+  }
+
   .pane-listing {
     margin: 0;
     border: 0;
     border-radius: 0;
+    background: transparent;
   }
 
   .pane-listing .listing {
@@ -879,8 +925,8 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     gap: 12px;
     flex-wrap: wrap;
     padding: 10px 12px 10px 16px;
-    border-top: var(--hair) solid var(--hairline);
     border-bottom: var(--hair) solid var(--hairline);
+    background: var(--raise);
   }
 
   .bar-actions {
