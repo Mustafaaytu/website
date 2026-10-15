@@ -60,18 +60,19 @@ const first = tourSamples[0];
     </section>
 
     <section class="sec">
-      <TourGrid />
-      <div class="split after">
+      <TourGrid variant="list" />
+      <div class="track-foot">
         <p class="p">
           Done with the tour? <a href={lessonHref(base, firstLesson)}>Learn the
           one rule</a> that makes iyi its own language, in {SPELLED[lessons.length]}
           {" "}lessons that each run a real program from the repository.
         </p>
         <p class="small">
-          Each program runs from the module the iyi compiler built for it,
-          checked against its recording before it starts. A step marked
-          recorded uses tasks, which the browser's target cannot run yet, so it
-          shows what the program printed natively instead.{" "}
+          <em class="key">native</em> Each program runs from the module the iyi
+          compiler built for it, checked against its recording before it
+          starts. A step marked native uses tasks, which the browser's target
+          cannot run yet, so it shows what the program printed natively
+          instead.{" "}
           <a href={`${base}playground/evidence/`}>How this works</a>
         </p>
       </div>
@@ -127,8 +128,32 @@ const first = tourSamples[0];
   </script>
 
   <style>
-    .after {
-      margin-top: 12px;
+    .track-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .track-foot .p {
+      max-width: 520px;
+    }
+
+    .track-foot .small {
+      max-width: 460px;
+      margin: 0;
+    }
+
+    .key {
+      margin-right: 6px;
+      font-style: normal;
+      font-size: 10.5px;
+      padding: 1px 6px;
+      border-radius: 5px;
+      background: var(--warn-soft);
+      color: var(--warn);
+      font-family: var(--font-mono);
     }
   </style>
 </Page>

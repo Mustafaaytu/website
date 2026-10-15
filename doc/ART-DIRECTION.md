@@ -182,8 +182,11 @@ are in `src/styles/site.css`: the type classes, `.sec`, `.split`, `.grid4`,
 that page's scoped style.
 
 Cards have a 16px radius, code frames 14px. Hairlines separate. There are two
-lifts and only two: a selected tab sits on a one-pixel shadow, and the race
-panel on /agents is a lit instrument with a gradient edge and a drop shadow.
+kinds of lift and no more: a selected tab sits on a one-pixel shadow, and the
+two replay panels, the rebuild on the home page and the race on /agents, are
+lit instruments with a gradient edge and a drop shadow. A hatch, drawn as a
+repeating gradient, marks what a figure leaves out: the part of Crystal's
+square iyi's hello does not need, and a module whose body a build skipped.
 The masthead is translucent and blurs what scrolls under it.
 
 ## Code display
@@ -319,9 +322,12 @@ decorative abstraction. Beyond the mascot, every visual is generated from
 something the repository produces: duration figures from the measurement
 record, mass figures at true area, a recorded session rendered line by line.
 
-One visual is illustrative, and the page says so under it: the /agents race.
-Its scrolling module bodies are generated from a fixed seed in the browser;
-the figures it lands on are the measured ones, read out of `facts.json`.
+Two visuals are illustrative, and each page says so under it. The home page's
+rebuild names its modules and its edit for the sake of the picture; the two
+durations it runs for, the module count and the ratio are the measured ones.
+The /agents race generates its scrolling module bodies from a fixed seed in
+the browser; the figures it lands on are read out of `facts.json`. Both are
+in the built HTML finished, and the script replays them.
 
 ## Rendered proof
 
@@ -339,7 +345,7 @@ Captured from the running site in a browser.
 
 Recorded because each is a way this specific site could fail.
 
-- No gradient and no shadow beyond the two named under Layout. No floating
+- No gradient and no shadow beyond the ones named under Layout. No floating
   orbs, no icon strip.
 - No emoji used as an icon, and no mascot used as one.
 - No em-dash in authored copy, and an en-dash only between the two ends of a
@@ -356,9 +362,9 @@ Recorded because each is a way this specific site could fail.
   modules; it does not compile what a visitor types, and the page says so.
 - No figure that only exists once a script has run. Every measurement is drawn
   by the stylesheet from data in the built HTML, and a script may animate it,
-  never reveal it. The /agents race and the recorded loop are both in the
-  built HTML, finished; the script replays the one and folds the other into
-  tabs.
+  never reveal it. The home page's rebuild, the /agents race and the recorded
+  loop are all in the built HTML, finished; the script replays the first two
+  and folds the third into tabs.
 - No control offered where it cannot act. The menu button, the scheme switch,
   every replay button, the loop's tabs and its reader switch appear only once
   a script has claimed them.

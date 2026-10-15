@@ -1,23 +1,32 @@
 ---
 /**
- * The tour, in its sections: every step numbered, named and described by the
- * program's own first comment line, so the description cannot drift from the
- * file. Read out of samples/tour/tour.json through src/playground/samples.ts,
- * so a step this grid offers is a step that has a page and a recording.
+ * The tour, one row per section: the section's number, title and blurb, and
+ * its programs, each described by the program's own first comment line so the
+ * description cannot drift from the file. Read out of samples/tour/tour.json
+ * through src/playground/samples.ts, so a step this list offers is a step that
+ * has a page and a recording.
  *
- * Shared by /learn/, where the tour is the second track, and /playground/,
- * where it is the whole page.
+ * Two densities. /learn/ shows the programs as chips, because there the tour
+ * is the second track; /playground/ shows each with its sentence, because
+ * there it is the whole page.
  */
 import { runnable, tourSections } from "../playground/samples";
 import { recordedText } from "../lib/highlight";
 import { inlineMarkdown } from "../lib/lessons";
 
+interface Props {
+  variant?: "chips" | "list";
+}
+
+const { variant = "list" } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/*$/, "/");
 
 const blurbOf = (path: string) => recordedText(path).split("\n")[0].replace(/^#\s*/, "");
+const plain = (markdown: string) => markdown.replace(/`/g, "");
 
 let n = 0;
-const sections = tourSections.map((section) => ({
+const sections = tourSections.map((section, i) => ({
+  no: String(i + 1).padStart(2, "0"),
   title: section.title,
   blurb: section.blurb,
   steps: section.steps.map((step) => ({
@@ -30,125 +39,235 @@ const sections = tourSections.map((section) => ({
 }));
 ---
 
-<div class="tour">
+<ol class:list={["track", { "track--list": variant === "list" }]}>
   {
     sections.map((section) => (
-      <section class="group">
-        <header>
-          <strong>{section.title}</strong>
-          <span>{section.blurb}</span>
-        </header>
-        <ol>
-          {section.steps.map((step) => (
-            <li>
-              <a href={step.href} data-step={step.id}>
-                <i>{step.n}</i>
-                <b>
-                  {step.id}
-                  {!step.runs && <>{" "}<em>recorded</em></>}
-                </b>
-                <span set:html={inlineMarkdown(step.blurb)} />
-                {/* Filled by the playground's progress island, in this
-                    browser only, and empty in the HTML. */}
-                <small data-role="state"></small>
+      <li class="track-row">
+        <div class="track-ch">
+          <span class="track-no">{section.no}</span>
+          <div>
+            <strong>{section.title}</strong>
+            <span>{section.blurb}</span>
+          </div>
+        </div>
+        {variant === "chips" ? (
+          <div class="track-progs">
+            {section.steps.map((step) => (
+              <a href={step.href} title={plain(step.blurb)} class:list={{ "is-start": step.n === 1 }} data-step={step.id}>
+                <i>{step.n}</i>{" "}
+                {step.id}
+                {!step.runs && <>{" "}<em>native</em></>}
               </a>
-            </li>
-          ))}
-        </ol>
-      </section>
+            ))}
+          </div>
+        ) : (
+          <ol class="pgl">
+            {section.steps.map((step) => (
+              <li>
+                <a href={step.href} class:list={{ "is-start": step.n === 1 }} data-step={step.id}>
+                  <i>{step.n}</i>
+                  <b>{step.id}</b>
+                  {!step.runs && <>{" "}<em>native</em></>}
+                  <span set:html={inlineMarkdown(step.blurb)} />
+                  {/* Filled by the playground's progress island, in this
+                      browser only, and empty in the HTML. */}
+                  <small data-role="state"></small>
+                </a>
+              </li>
+            ))}
+          </ol>
+        )}
+      </li>
     ))
   }
-</div>
+</ol>
 
 <style>
-  .tour {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
-    gap: 12px;
-    align-items: start;
-  }
-
-  .group {
-    border-radius: var(--radius-lg);
-    border: var(--hair) solid var(--hairline);
-    background: var(--card);
-    overflow: hidden;
-  }
-
-  header {
-    padding: 16px 18px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  header strong {
-    font-weight: 650;
-    font-size: 17px;
-  }
-
-  header span {
-    font-size: 14px;
-    color: var(--graphite);
-  }
-
-  ol {
+  .track {
     list-style: none;
     margin: 0;
     padding: 0;
+    border-top: var(--hair) solid var(--hairline);
   }
 
-  a {
+  .track-row {
     display: grid;
-    grid-template-columns: 28px minmax(0, 1fr);
-    gap: 2px 10px;
-    padding: 10px 18px;
-    border-top: var(--hair) solid var(--hairline);
+    grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+    gap: 12px 32px;
+    align-items: start;
+    padding: 18px 0;
+    border-bottom: var(--hair) solid var(--hairline);
+  }
+
+  .track--list .track-row {
+    padding: 22px 0;
+  }
+
+  @media (max-width: 759px) {
+    .track-row {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 1099px) {
+    .track--list .track-row {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .track-ch {
+    display: flex;
+    gap: 14px;
+    align-items: baseline;
+  }
+
+  .track-no {
+    font: 500 13px var(--font-mono);
+    color: var(--mute);
+    flex: none;
+  }
+
+  .track-ch div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .track-ch strong {
+    font-weight: 650;
+    font-size: 16.5px;
+    letter-spacing: -0.01em;
+  }
+
+  .track-ch div span {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--graphite);
+  }
+
+  .track-progs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .track-progs a {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 7px;
+    padding: 7px 11px;
+    border-radius: 9px;
+    border: var(--hair) solid var(--hairline);
+    background: var(--card);
+    font: 500 13px var(--font-mono);
     color: var(--ink);
     text-decoration: none;
   }
 
-  a:hover {
-    background: var(--raise);
+  .track-progs a:hover {
+    border-color: var(--mute);
     color: var(--ink);
+    background: var(--raise);
   }
 
-  i {
+  .track-progs a i,
+  .pgl a i {
     font-style: normal;
-    font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 11px;
     color: var(--mute);
-    padding-top: 2px;
   }
 
-  b {
-    font-family: var(--font-mono);
-    font-weight: 500;
-    font-size: 13.5px;
+  .track-progs a.is-start {
+    border-color: var(--brand);
+    background: var(--brand-soft);
+  }
+
+  .track-progs a.is-start i,
+  .pgl a.is-start i {
+    color: var(--brand-deep);
   }
 
   em {
     font-style: normal;
-    margin-left: 8px;
-    font-size: 11px;
+    font-size: 10.5px;
+    padding: 1px 6px;
+    border-radius: 5px;
+    background: var(--warn-soft);
     color: var(--warn);
     font-family: var(--font-mono);
   }
 
-  small {
-    grid-column: 2;
+  .pgl {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 12px;
+  }
+
+  @media (max-width: 599px) {
+    .pgl {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .pgl a {
+    display: grid;
+    grid-template-columns: 26px auto minmax(0, 1fr);
+    grid-template-areas:
+      "n name rec"
+      ". d d"
+      ". s s";
+    align-items: baseline;
+    gap: 2px 8px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .pgl a:hover {
+    background: var(--raise);
+    color: var(--ink);
+  }
+
+  .pgl a i {
+    grid-area: n;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+  }
+
+  .pgl a b {
+    grid-area: name;
+    font: 500 14px var(--font-mono);
+  }
+
+  .pgl a em {
+    grid-area: rec;
+    justify-self: start;
+  }
+
+  .pgl a span {
+    grid-area: d;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--graphite);
+  }
+
+  .pgl a.is-start {
+    background: var(--brand-soft);
+    box-shadow: inset 0 0 0 1px var(--brand);
+  }
+
+  .pgl small {
+    grid-area: s;
     font-family: var(--font-mono);
     font-size: 11px;
     color: var(--ok);
   }
 
-  small:empty {
+  .pgl small:empty {
     display: none;
-  }
-
-  span {
-    grid-column: 2;
-    font-size: 13.5px;
-    color: var(--graphite);
   }
 </style>

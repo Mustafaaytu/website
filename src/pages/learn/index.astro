@@ -250,22 +250,28 @@ const further = [
         <h2 class="h2">The syntax, in {tourSamples.length} short programs</h2>
         <p class="p">
           The rules are what make iyi a different language from the one it
-          forked. The tour is everything else: the syntax, in the order a
-          person learns a language, each step a program that runs in your
-          browser. Read the rules first and the tour reads as confirmation.
-          Read the tour first and the rules read as the reason.
+          forked. The tour is everything else, in the order a person learns a
+          language, each program running in your browser. Read the rules first
+          and the tour reads as confirmation. Read the tour first and the rules
+          read as the reason.
         </p>
       </div>
-      <TourGrid />
-      {
-        nativeIds.length > 0 && (
-          <p class="small">
-            {nativeIds.join(" and ")} {nativeIds.length === 1 ? "has" : "have"} no
-            wasm target yet, so {nativeIds.length === 1 ? "that page shows" : "those pages show"}{" "}
-            what the program printed natively.
-          </p>
-        )
-      }
+      <TourGrid variant="chips" />
+      <div class="track-foot">
+        {
+          nativeIds.length > 0 ? (
+            <span class="small">
+              <em class="key">native</em> {nativeIds.join(" and ")}{" "}
+              {nativeIds.length === 1 ? "has" : "have"} no wasm target yet, so{" "}
+              {nativeIds.length === 1 ? "it shows" : "those show"} what the
+              program printed natively.
+            </span>
+          ) : (
+            <span />
+          )
+        }
+        <a class="button" href={tourStart.href}>Start the tour at {tourStart.id} →</a>
+      </div>
     </section>
 
     <section class="sec">
@@ -414,5 +420,24 @@ const further = [
 
   .list a {
     text-decoration: none;
+  }
+
+  .track-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .key {
+    margin-right: 6px;
+    font-style: normal;
+    font-size: 10.5px;
+    padding: 1px 6px;
+    border-radius: 5px;
+    background: var(--warn-soft);
+    color: var(--warn);
+    font-family: var(--font-mono);
   }
 </style>

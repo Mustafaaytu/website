@@ -3,7 +3,7 @@ import { Image } from "astro:assets";
 import Page from "../layouts/Page.astro";
 import Measure from "../components/Measure.astro";
 import Stamped from "../components/Stamped.astro";
-import DurationChart from "../components/DurationChart.astro";
+import RebuildRace from "../components/RebuildRace.astro";
 import Sample from "../components/Sample.astro";
 import Quote from "../components/Quote.astro";
 import Platform from "../components/Platform.astro";
@@ -38,9 +38,6 @@ const loop = facts.recorded.edit_loop;
 const bin = facts.recorded.hello_binary;
 const pack = facts.recorded.context_pack;
 
-const ratios = loop.ratios as number[];
-const loopClaim = `About ${loop.claim.value}x less`;
-const loopBand = `${Math.min(...ratios).toFixed(2)}x to ${Math.max(...ratios).toFixed(2)}x across ${loop.sessions.length} published sessions.`;
 const massRatio = Math.round(bin.crystal.kb / bin.iyi.kb);
 
 /* The platforms README.md says are run every build, out of
@@ -70,7 +67,6 @@ if (wasm === undefined) {
 const machines = releaseAssets(release).map((asset) => asset.machine);
 const windows = windowsAsset(release);
 
-const loopTail = `than Crystal, on the line you just changed. ${loopBand} The bars run at real speed.`;
 ---
 
 <Page
@@ -78,9 +74,9 @@ const loopTail = `than Crystal, on the line you just changed. ${loopBand} The ba
   summary="iyi is a compiled language written for two readers: the person editing the code and the agent editing it beside them. Modules compile against declarations, never bodies, so a build reads less and so does a model, and a grounded edit spent fewer prompt tokens over twenty-six measured runs."
 >
   <div class="wrap">
+    <div class="hero-row">
     <section class="page-hero">
       <p class="eyebrow">
-        <Image src={mascot} alt="" width={20} height={19} densities={[1, 2]} loading="eager" decoding="async" />
         <a href={releaseUrl(release)}>Version {release.version}</a> · {release.date}
       </p>
       <h1 class="h1">A friendly, fast language for people and their agents.</h1>
@@ -96,6 +92,28 @@ const loopTail = `than Crystal, on the line you just changed. ${loopBand} The ba
         <a class="button button--ghost" href={firstHref}>Try it in the browser</a>
       </div>
     </section>
+    {/* The mascot, large, beside the one line. The largest thing painted above
+        the fold, so it is eager and asks for priority. */}
+    <div class="hero-art">
+      <Image
+        src={mascot}
+        alt="The iyi mascot: a smiling red heart with yellow gloves, waving"
+        width={360}
+        height={339}
+        densities={[1, 2]}
+        loading="eager"
+        decoding="async"
+        fetchpriority="high"
+      />
+    </div>
+    </div>
+    <div class="rebuild-wrap">
+      <RebuildRace />
+      <p class="small">
+        Module names and the edit are illustrative. The two durations are the
+        measured ones, from the same compiler binary under each set of rules.
+      </p>
+    </div>
 
     <section class="sec split">
       <div class="sec__head">
@@ -259,30 +277,48 @@ const loopTail = `than Crystal, on the line you just changed. ${loopBand} The ba
       </div>
     </section>
 
-    <section class="sec split">
-      <div class="sec__head">
-        <h2 class="h2">Measured</h2>
-        <p class="p">
-          One line changed in one of <Measure of="modules" /> modules,{" "}
-          <Measure of="generated" /> lines in all, built by iyi and by the same
-          compiler under Crystal's rules, by a generator that refuses to start
-          the clock until both print the same total.
-        </p>
-      </div>
-      <Stamped claim={loopClaim} band={loopTail} subject={loop.subject} outcome="win">
-        <button slot="action" type="button" class="copy replay" data-replay>
-          <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M10 6a4 4 0 1 1-1.2-2.85M10 1.5v2.2H7.8" /></svg>
-          Replay
-        </button>
-        <DurationChart slot="figure" />
-      </Stamped>
-    </section>
   </div>
 
   <style>
     .eyebrow a {
       color: inherit;
       text-decoration: none;
+    }
+
+    .hero-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: clamp(24px, 4vw, 56px);
+    }
+
+    /* Centred on the copy, not on the section's padding above it. */
+    .hero-art {
+      padding-top: clamp(48px, 7vw, 80px);
+    }
+
+    .hero-art :global(img) {
+      display: block;
+      width: clamp(220px, 26vw, 360px);
+      height: auto;
+    }
+
+    /* On a phone the line is the hero; the mascot is already in the
+     * masthead. */
+    @media (max-width: 760px) {
+      .hero-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .hero-art {
+        display: none;
+      }
+    }
+
+    .rebuild-wrap {
+      margin-top: clamp(20px, 3vw, 36px);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
 
     .checks {
