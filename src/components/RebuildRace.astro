@@ -311,7 +311,7 @@ end</pre>
   }
 
   .rb-file {
-    padding: 12px 18px;
+    padding: 10px 18px;
     border-bottom: var(--hair) solid var(--hairline);
     font: 12px var(--font-mono);
     color: var(--mute);
@@ -319,7 +319,7 @@ end</pre>
 
   .rb-code {
     margin: 0;
-    padding: 16px 18px;
+    padding: 12px 18px;
     font: 12px/1.75 var(--font-mono);
     color: var(--ink);
     white-space: pre;
@@ -404,10 +404,10 @@ end</pre>
 
   .rb-lane {
     flex: 1 1 230px;
-    padding: 18px 20px;
+    padding: 14px 20px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 10px;
     border-right: var(--hair) solid var(--hairline);
     border-bottom: var(--hair) solid var(--hairline);
     margin-bottom: -1px;
@@ -418,12 +418,12 @@ end</pre>
     border-right: 0;
   }
 
+  /* Name over description in both lanes, so the two durations under them
+   * sit on one line whatever the width. */
   .rb-head {
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 10px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 2px;
   }
 
   .rb-head b {
@@ -441,9 +441,11 @@ end</pre>
     color: var(--mute);
   }
 
+  /* Ten across, so thirty modules are three rows and the two durations stay
+   * in the first screen. */
   .rb-grid {
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(10, minmax(0, 1fr));
     gap: 4px;
   }
 
@@ -471,8 +473,10 @@ end</pre>
     background: var(--ok);
   }
 
+  /* Right under the modules it timed, not pinned to the panel's foot, so
+   * the two durations are in the first screen on a laptop. */
   .rb-foot {
-    margin-top: auto;
+    margin-top: 4px;
     display: flex;
     justify-content: space-between;
     align-items: baseline;
