@@ -722,6 +722,8 @@ const shards = ["kemal", "db", "ameba", "sqlite3"];
   </style>
 
   <script>
+    import { playWhenSeen, reducedMotion } from "../lib/play-when-seen";
+
     /* Puts "hello" at true area, played once when scrolled to and again on
      * Replay: Crystal's library first, then iyi's, then the ratio. Each
      * square's side follows the square root of the elapsed fraction, so its
@@ -732,7 +734,7 @@ const shards = ["kemal", "db", "ameba", "sqlite3"];
     const PAUSE_MS = 150;
 
     document.querySelectorAll<HTMLElement>("[data-area]").forEach((area) => {
-      if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      if (reducedMotion()) return;
       const figure = area.closest("figure") ?? area;
       const crystal = area.querySelector<HTMLElement>(".area-crystal");
       const iyi = area.querySelector<HTMLElement>(".area-iyi");
@@ -774,16 +776,7 @@ const shards = ["kemal", "db", "ameba", "sqlite3"];
 
       figure.setAttribute("data-chart", "ready");
       figure.querySelector("[data-replay]")?.addEventListener("click", play);
-      const seen = new IntersectionObserver(
-        (entries) => {
-          if (entries.some((entry) => entry.isIntersecting)) {
-            play();
-            seen.disconnect();
-          }
-        },
-        { threshold: 1, rootMargin: "0px 0px -33% 0px" },
-      );
-      seen.observe(area);
+      playWhenSeen(area, play);
     });
   </script>
 </Page>

@@ -10,8 +10,7 @@
  * is the second track; /playground/ shows each with its sentence, because
  * there it is the whole page.
  */
-import { runnable, tourSections } from "../playground/samples";
-import { recordedText } from "../lib/highlight";
+import { blurbOf, runnable, tourSections } from "../playground/samples";
 import { inlineMarkdown } from "../lib/lessons";
 
 interface Props {
@@ -24,7 +23,6 @@ const { variant = "list", heading = "h2" } = Astro.props;
 const Title = heading;
 const base = import.meta.env.BASE_URL.replace(/\/*$/, "/");
 
-const blurbOf = (path: string) => recordedText(path).split("\n")[0].replace(/^#\s*/, "");
 const plain = (markdown: string) => markdown.replace(/`/g, "");
 
 let n = 0;
@@ -59,7 +57,7 @@ const sections = tourSections.map((section, i) => ({
               <a href={step.href} title={plain(step.blurb)} class:list={{ "is-start": step.n === 1 }} data-step={step.id}>
                 <i>{step.n}</i>{" "}
                 {step.id}
-                {!step.runs && <>{" "}<em>native</em></>}
+                {!step.runs && <>{" "}<em class="native">native</em></>}
               </a>
             ))}
           </div>
@@ -70,8 +68,8 @@ const sections = tourSections.map((section, i) => ({
                 <a href={step.href} class:list={{ "is-start": step.n === 1 }} data-step={step.id}>
                   <i>{step.n}</i>
                   <b>{step.id}</b>
-                  {!step.runs && <>{" "}<em>native</em></>}
-                  <span set:html={inlineMarkdown(step.blurb)} />
+                  {!step.runs && <>{" "}<em class="native">native</em></>}
+                  <span set:html={`${inlineMarkdown(step.blurb)}.`} />
                   {/* Filled by the playground's progress island, in this
                       browser only, and empty in the HTML. */}
                   <small data-role="state"></small>
@@ -194,7 +192,7 @@ const sections = tourSections.map((section, i) => ({
     color: var(--brand-deep);
   }
 
-  em {
+  em.native {
     font-style: normal;
     font-size: 10.5px;
     padding: 1px 6px;
@@ -250,7 +248,7 @@ const sections = tourSections.map((section, i) => ({
     font: 500 14px var(--font-mono);
   }
 
-  .pgl a em {
+  .pgl a em.native {
     grid-area: rec;
     justify-self: start;
   }

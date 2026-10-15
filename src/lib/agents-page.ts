@@ -15,6 +15,8 @@
  * the page hands it through data attributes read out of facts.json.
  */
 
+import { playWhenSeen, reducedMotion } from "./play-when-seen";
+
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 const store = (key: string, value?: string): string | null => {
@@ -41,7 +43,7 @@ function wireLoop(box: HTMLElement): (step: number) => void {
   const render = () => {
     tabs.forEach((tab, i) => tab.setAttribute("aria-selected", String(i === step)));
     steps.forEach((panel, i) => (panel.hidden = i !== step));
-    readers.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.reader === reader)));
+    readers.forEach((b) => b.setAttribute("aria-checked", String(b.dataset.reader === reader)));
     box.dataset.reader = reader;
     if (readerNote) readerNote.textContent = reader === "person" ? "rendered for you" : "exactly what the agent receives";
     if (next) next.textContent = step === steps.length - 1 ? "Start over" : "Next step →";
@@ -63,7 +65,7 @@ function wireLoop(box: HTMLElement): (step: number) => void {
   return (to: number) => {
     step = to;
     render();
-    box.scrollIntoView({ behavior: "smooth", block: "start" });
+    box.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
   };
 }
 
@@ -75,7 +77,7 @@ function wireDiff(box: HTMLElement, options: HTMLElement) {
   const buttons = [...options.querySelectorAll<HTMLButtonElement>("[data-edit]")];
   const panels = [...box.querySelectorAll<HTMLElement>("[data-edit-panel]")];
   const pick = (edit: string) => {
-    buttons.forEach((b) => b.setAttribute("aria-selected", String(b.dataset.edit === edit)));
+    buttons.forEach((b) => b.setAttribute("aria-checked", String(b.dataset.edit === edit)));
     panels.forEach((p) => (p.hidden = p.dataset.editPanel !== edit));
   };
   options.addEventListener("click", (event) => {
@@ -176,7 +178,7 @@ function wireRace(race: HTMLElement, goStep: (step: number) => void) {
 
   /* Under reduced motion there is nothing to replay, so the control is not
    * offered: the race stays at its finished state. */
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  if (reducedMotion()) {
     t = 1;
     tick();
     return;
@@ -198,16 +200,7 @@ function wireRace(race: HTMLElement, goStep: (step: number) => void) {
   };
   replay = play;
 
-  const seen = new IntersectionObserver(
-    (entries) => {
-      if (entries.some((entry) => entry.isIntersecting)) {
-        play();
-        seen.disconnect();
-      }
-    },
-    { threshold: 0.35 },
-  );
-  seen.observe(race);
+  playWhenSeen(race, play, { threshold: 0.35 });
 }
 
 export function wireAgentsPage() {
