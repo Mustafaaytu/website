@@ -234,6 +234,13 @@ pre {
   text-decoration: none;
 }
 
+/* An author `display` beats the user agent's `[hidden] { display: none }`, so
+ * a button marked hidden would stay on the page and stay clickable. */
+.cta[hidden],
+.button[hidden] {
+  display: none;
+}
+
 .button--ink {
   background: var(--ink);
   color: var(--paper);

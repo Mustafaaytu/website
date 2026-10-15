@@ -15,6 +15,7 @@
  */
 import { Image } from "astro:assets";
 import Page from "../layouts/Page.astro";
+import Measure from "../components/Measure.astro";
 import facts from "../generated/facts.json";
 import record from "../../records/agent.json";
 import mascot from "../assets/mascot.png";
@@ -266,7 +267,7 @@ const diffs = [
 
     <section class="sec" id="loop">
       <div class="sec__head">
-        <span class="badge" title={`${provenance.command}, ${provenance.when.slice(0, 10)}`}>
+        <span class="badge" title={`${provenance.command} refuses to publish a frame whose verdict moved`}>
           <i></i>recorded with {provenance.compiler.split(" (")[0]} · {provenance.commit.slice(0, 9)}
         </span>
         <h2 class="h2">The loop, recorded.</h2>
@@ -400,12 +401,12 @@ const diffs = [
       <div class="sec__head">
         <h2 class="h2">How the numbers were measured.</h2>
         <p class="p">
-          A model was given the same task twice: once grounded in the sources
-          of the import closure, once in <code>iyi mod context</code>. The gate
-          is <code>{pack.command}</code>, and it runs both arms.
+          The saving is a property of scale, so it is measured on the
+          repository's own <Measure of="modules" />-module project, by a gate
+          that runs both arms.
         </p>
         <p class="p note">
-          The loop above is <code>records/agent/</code> in this site's
+          The project is <code>records/agent/</code> in this site's
           repository. <a href={`${base}install/`}>Install the compiler</a> and
           the frames on this page are what you will see.
         </p>
@@ -416,6 +417,7 @@ const diffs = [
           <span>{facts.provenance.commit}</span>
         </div>
         <dl>
+          <div><dt>project</dt><dd><Measure of="modules" /> modules · <Measure of="generated" /> lines</dd></div>
           <div><dt>runs</dt><dd>{pack.runs}</dd></div>
           <div><dt>arm A</dt><dd>sources</dd></div>
           <div><dt>arm B</dt><dd>iyi mod context</dd></div>

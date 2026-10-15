@@ -65,12 +65,17 @@ const slowest = Math.max(...rows.map((r) => r.fast));
     figure.setAttribute("data-chart", "ready");
 
     const play = () => {
-      chart.classList.remove("running");
+      chart.classList.remove("waiting", "running");
       void chart.offsetWidth;
       chart.classList.add("running");
       const slowest = Number(chart.dataset.slowest ?? "0");
       window.setTimeout(() => chart.classList.remove("running"), slowest * 1000 + 60);
     };
+
+    // The finished bars are what the HTML draws, for a reader with no
+    // script. With one, the bars start empty and wait to be read, so a
+    // reader scrolling past does not see the result before the run.
+    chart.classList.add("waiting");
 
     figure.querySelector<HTMLButtonElement>("[data-replay]")?.addEventListener("click", play);
 
@@ -83,7 +88,7 @@ const slowest = Math.max(...rows.map((r) => r.fast));
           }
         }
       },
-      { threshold: 0.35 },
+      { threshold: 1, rootMargin: "0px 0px -33% 0px" },
     );
     seen.observe(chart);
   });
@@ -147,6 +152,10 @@ const slowest = Math.max(...rows.map((r) => r.fast));
 
   .win .bar i {
     background: var(--ok);
+  }
+
+  .chart.waiting .bar i {
+    width: 0;
   }
 
   /* Real time: the bar takes exactly as long as the build took. */

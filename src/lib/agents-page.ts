@@ -9,7 +9,8 @@
  * controls that select them are hidden until it runs.
  *
  * The race is the one illustrative thing on the page, and the page says so
- * under it. The module bodies scrolling through its lanes are generated here
+ * under it. It plays once when it is scrolled to and again on Replay, never on
+ * a loop. The module bodies scrolling through its lanes are generated here
  * from a fixed seed; the numbers it lands on are the measured ones, which
  * the page hands it through data attributes read out of facts.json.
  */
@@ -134,7 +135,8 @@ function wireRace(race: HTMLElement, goStep: (step: number) => void) {
   const lanes = [...race.querySelectorAll<HTMLElement>("[data-lane]")];
   const foot = race.querySelector<HTMLElement>("[data-foot]");
   const dot = race.querySelector<HTMLElement>("[data-dot]");
-  let t = 0;
+  let t = 1;
+  let replay = () => {};
 
   const tick = () => {
     const done = t >= 1;
@@ -168,10 +170,8 @@ function wireRace(race: HTMLElement, goStep: (step: number) => void) {
   race.addEventListener("click", (event) => {
     const b = (event.target as HTMLElement).closest<HTMLButtonElement>("button");
     if (!b) return;
-    if (b.hasAttribute("data-replay")) {
-      t = 0;
-      tick();
-    } else if (b.dataset.goto !== undefined) goStep(Number(b.dataset.goto));
+    if (b.hasAttribute("data-replay")) replay();
+    else if (b.dataset.goto !== undefined) goStep(Number(b.dataset.goto));
   });
 
   race.dataset.js = "true";
@@ -180,12 +180,32 @@ function wireRace(race: HTMLElement, goStep: (step: number) => void) {
     tick();
     return;
   }
-  tick();
-  window.setInterval(() => {
-    if (document.hidden) return;
-    t = t >= 1.7 ? 0 : t + 0.011;
+
+  /* One run, then the finished result stays. A replay that loops reads as
+   * decoration; Replay runs it again. */
+  let timer = 0;
+  const play = () => {
+    window.clearInterval(timer);
+    t = 0;
     tick();
-  }, 70);
+    timer = window.setInterval(() => {
+      t = Math.min(1, t + 0.011);
+      tick();
+      if (t >= 1) window.clearInterval(timer);
+    }, 70);
+  };
+  replay = play;
+
+  const seen = new IntersectionObserver(
+    (entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        play();
+        seen.disconnect();
+      }
+    },
+    { threshold: 0.35 },
+  );
+  seen.observe(race);
 }
 
 export function wireAgentsPage() {

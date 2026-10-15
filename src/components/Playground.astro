@@ -152,7 +152,9 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     <div class="pg-card">
       <figure class="source pane-listing">
         <figcaption class="source-head">
-          <span class="path">{sample.path} · {runnable(sample) ? sample.wasm : "native only"}</span>
+          <span class="path">
+            {sample.path} · {runnable(sample) ? `${sample.wasm} · ${Math.round(sample.bytes / 1024)} KB` : "native only"}
+          </span>
           <button type="button" class="copy" data-copy={source} aria-label="Copy the program">
             Copy
           </button>
@@ -230,6 +232,10 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
         <a href={`${base}playground/evidence/`}>How this works</a>
       </p>
     </div>
+
+    <p class="small stamp-line">
+      recorded with {entry.recorded.compiler} · {entry.recorded.machine} · {entry.recorded.when.slice(0, 10)}
+    </p>
 
     <p class="small foot" data-role="foot-recorded">
       {
@@ -949,8 +955,12 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     color: inherit;
   }
 
-  .foot {
+  .stamp-line {
     margin: -12px 0 0;
+  }
+
+  .foot {
+    margin: -16px 0 0;
   }
 
   .local .sec__head {
