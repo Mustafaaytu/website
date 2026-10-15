@@ -57,7 +57,9 @@ const commit = execFileSync("git", ["-C", repo, "rev-parse", "HEAD"], {
   encoding: "utf8",
 }).trim();
 
-const lines = readFileSync(resolve(repo, WORKFLOW), "utf8").replace(/\n$/, "").split("\n");
+// LF, as the repository holds it: a Windows clone checks the workflow out with
+// CRLF, and the trailing `\` continuations and line anchors below end at "\n".
+const lines = readFileSync(resolve(repo, WORKFLOW), "utf8").replace(/\r\n/g, "\n").replace(/\n$/, "").split("\n");
 
 // ---------------------------------------------------------------------------
 // The jobs

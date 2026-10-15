@@ -33,6 +33,11 @@ The scripts look for an iyi checkout beside this one, named `iyi`, or wherever
     npm run build            # generate, build, check the built prose
     npm run dev              # the same, served locally
 
+`scripts/facts.mjs` runs `bench/site_facts.py`, so Python 3 has to be on
+`PATH`: as `python3`, or as `python` on Windows. A Windows clone works as is;
+`.gitattributes` checks this tree out with LF, and the generators read the
+iyi files that tree does not pin to LF as LF.
+
 `bench/website_citations.py` checks that every path the documents under `doc/`
 cite exists, in this tree or in iyi's.
 

@@ -1,0 +1,11 @@
+# Every text file is checked out with LF, Windows included. The records are
+# verified by checksum against the bytes they were made from, the tour and the
+# agent project are hashed and quoted by line, and the generators split on
+# "\n": a Windows clone with core.autocrlf gave all of them CRLF and the build
+# refused bytes the repository does not have.
+* text=auto eol=lf
+
+*.png binary
+*.ico binary
+*.wasm binary
+*.woff2 binary

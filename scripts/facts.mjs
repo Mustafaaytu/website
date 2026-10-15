@@ -13,9 +13,14 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repo = process.env.IYI_REPO ? resolve(process.env.IYI_REPO) : resolve(here, "..", "..", "iyi");
 const out = resolve(here, "..", "src", "generated");
 
+// Windows has no `python3` unless the Store stub is standing in for it, which
+// prints an install prompt instead of running anything; `python` is the name
+// every Windows distribution of the interpreter puts on PATH.
+const python = process.platform === "win32" ? "python" : "python3";
+
 let raw;
 try {
-  raw = execFileSync("python3", [resolve(here, "..", "bench", "site_facts.py")], {
+  raw = execFileSync(python, [resolve(here, "..", "bench", "site_facts.py")], {
     encoding: "utf8",
     maxBuffer: 16 * 1024 * 1024,
   });

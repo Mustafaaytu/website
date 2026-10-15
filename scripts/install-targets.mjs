@@ -80,7 +80,9 @@ const ALIAS = new Map([
 
 const read = (relative) => {
   try {
-    return readFileSync(resolve(repo, relative), "utf8");
+    // LF, as the repository holds it: a Windows clone checks install.ps1 out
+    // with CRLF, and the `^...$` anchors below would carry the "\r".
+    return readFileSync(resolve(repo, relative), "utf8").replace(/\r\n/g, "\n");
   } catch {
     throw new Error(
       `install-targets: cannot read ${relative} in ${repo}. The site states ` +

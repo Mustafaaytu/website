@@ -54,7 +54,9 @@ const ALIAS = new Map([
 
 const read = (relative) => {
   try {
-    return readFileSync(resolve(repo, relative), "utf8");
+    // LF, as the repository holds it: a Windows clone checks the workflow out
+    // with CRLF, and every anchor below ends a line at "\n".
+    return readFileSync(resolve(repo, relative), "utf8").replace(/\r\n/g, "\n");
   } catch {
     throw new Error(
       `targets: cannot read ${relative} in ${repo}. The site restates that ` +

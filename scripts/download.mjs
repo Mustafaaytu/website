@@ -52,9 +52,12 @@ const commit = execFileSync("git", ["-C", repo, "rev-parse", "HEAD"], {
   encoding: "utf8",
 }).trim();
 
-const installer = readFileSync(resolve(repo, INSTALLER), "utf8").replace(/\n$/, "").split("\n");
-const workflow = readFileSync(resolve(repo, WORKFLOW), "utf8").replace(/\n$/, "").split("\n");
-const powershell = readFileSync(resolve(repo, WINDOWS), "utf8").replace(/\n$/, "").split("\n");
+// LF, as the repository holds them: a Windows clone checks the workflow and
+// install.ps1 out with CRLF, and the passages are quoted as git stores them.
+const text = (path) => readFileSync(resolve(repo, path), "utf8").replace(/\r\n/g, "\n");
+const installer = text(INSTALLER).replace(/\n$/, "").split("\n");
+const workflow = text(WORKFLOW).replace(/\n$/, "").split("\n");
+const powershell = text(WINDOWS).replace(/\n$/, "").split("\n");
 
 /**
  * A span of a file, found by the line that opens it and the line that closes
