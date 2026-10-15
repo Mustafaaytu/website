@@ -199,8 +199,13 @@ function weigh(file) {
   for (const [, set] of html.matchAll(/\bsrcset="([^"]+)"/g)) {
     for (const candidate of set.split(",")) pictures.add(candidate.trim().split(/\s+/)[0]);
   }
-  for (const [, url] of html.matchAll(/<link\b[^>]*\brel="preload"[^>]*\bhref="([^"]+)"/g)) {
-    pictures.add(url);
+  /* A preloaded image is a picture. A preloaded font is not: it is one of the
+   * faces the font column below already counts, and adding it here as well
+   * counted every preloaded face twice. */
+  for (const [tag] of html.matchAll(/<link\b[^>]*\brel="preload"[^>]*>/g)) {
+    if (/\bas="font"/.test(tag)) continue;
+    const href = /\bhref="([^"]+)"/.exec(tag);
+    if (href) pictures.add(href[1]);
   }
 
   const points = codepoints(html);
