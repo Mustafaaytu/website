@@ -112,13 +112,15 @@ end</pre>
 </div>
 
 <script>
+  import { playWhenSeen, reducedMotion } from "../lib/play-when-seen";
+
   const BEFORE = '  "Dear #{name}"';
   const AFTER = '  "Dear #{name}, welcome."';
   const T_TYPE = 1.6;
   const T_GAP = 0.35;
   
   document.querySelectorAll<HTMLElement>("[data-rebuild]").forEach((root) => {
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (reducedMotion()) return;
 
     const iyi = Number(root.dataset.iyi);
     const crystal = Number(root.dataset.crystal);
@@ -189,16 +191,7 @@ end</pre>
 
     root.querySelector("[data-replay]")?.addEventListener("click", play);
 
-    const seen = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          play();
-          seen.disconnect();
-        }
-      },
-      { threshold: 0.35 },
-    );
-    seen.observe(root);
+    playWhenSeen(root, play, { threshold: 0.35 });
   });
 </script>
 

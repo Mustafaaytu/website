@@ -50,13 +50,14 @@ const slowest = Math.max(...rows.map((r) => r.fast));
 </div>
 
 <script>
+  import { playWhenSeen, reducedMotion } from "../lib/play-when-seen";
+
   // Run once when seen, and again on request. Reduced motion is honoured by
   // doing nothing at all rather than by animating faster: the animation IS the
   // measurement, so a shortened one would be a false reading.
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
 
   document.querySelectorAll<HTMLElement>(".chart").forEach((chart) => {
-    if (reduce.matches) return;
+    if (reducedMotion()) return;
 
     // The replay control lives in the card's bar, which is the chart's
     // figure. It is hidden until this line: a control that cannot do anything
@@ -79,18 +80,7 @@ const slowest = Math.max(...rows.map((r) => r.fast));
 
     figure.querySelector<HTMLButtonElement>("[data-replay]")?.addEventListener("click", play);
 
-    const seen = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            play();
-            seen.disconnect();
-          }
-        }
-      },
-      { threshold: 1, rootMargin: "0px 0px -33% 0px" },
-    );
-    seen.observe(chart);
+    playWhenSeen(chart, play);
   });
 </script>
 

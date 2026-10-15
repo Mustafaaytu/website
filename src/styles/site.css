@@ -331,6 +331,7 @@
 }
 
 .tabs [aria-selected="true"],
+.tabs [aria-checked="true"],
 .tabs [aria-current="page"] {
   color: var(--ink);
   background: var(--card);

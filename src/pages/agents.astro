@@ -343,8 +343,8 @@ const diffs = [
           <div>
             <div class="tabs" role="radiogroup" aria-label="Read as">
               <span class="small read-as">Read as</span>
-              <button type="button" role="radio" data-reader="person" aria-selected="true">Person</button>
-              <button type="button" role="radio" data-reader="agent" aria-selected="false">Agent</button>
+              <button type="button" role="radio" data-reader="person" aria-checked="true">Person</button>
+              <button type="button" role="radio" data-reader="agent" aria-checked="false">Agent</button>
             </div>
             <span class="small" data-reader-note>rendered for you</span>
           </div>
@@ -388,7 +388,7 @@ const diffs = [
         <div class="tabs diff-options" role="radiogroup" aria-label="Edit" id="diffopts">
           {
             diffs.map((d, i) => (
-              <button type="button" role="radio" data-edit={d.key} aria-selected={i === 0 ? "true" : "false"}>
+              <button type="button" role="radio" data-edit={d.key} aria-checked={i === 0 ? "true" : "false"}>
                 {d.label}
               </button>
             ))

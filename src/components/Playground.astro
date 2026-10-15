@@ -47,7 +47,8 @@ import { activeEngine } from "../playground/registry";
 import type { Capability } from "../playground/types";
 import type { TourStep } from "../playground/samples";
 import type { SampleEntry } from "../playground/entry";
-import { runnable, tourSamples, tourSections } from "../playground/samples";
+import { blurbOf, runnable, tourSamples, tourSections } from "../playground/samples";
+import { inlineMarkdown } from "../lib/lessons";
 import { markListing } from "../playground/render";
 import { highlightedLines, recordedText } from "../lib/highlight";
 
@@ -91,7 +92,7 @@ const inkLines =
 /* Every sample opens with a comment saying what it is. That line is the page's
  * one sentence about the program, so the description cannot drift from the
  * file. */
-const blurb = source.split("\n")[0].replace(/^#\s*/, "").replace(/\.$/, "");
+const blurb = blurbOf(sample.path);
 
 /* The HTML parser drops one newline immediately after a `<pre>` open tag.
  * Every sample begins with a comment, so this costs nothing today; it is here
@@ -137,7 +138,7 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
               ))
         }
       </h1>
-      <p class="lead">{blurb}.</p>
+      <p class="lead" set:html={`${inlineMarkdown(blurb)}.`} />
     </div>
 
     <div class="pg-card">
