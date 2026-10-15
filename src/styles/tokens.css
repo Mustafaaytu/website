@@ -64,7 +64,7 @@
   /* The masthead is translucent over the page it scrolls above. */
   --masthead: rgba(255, 255, 255, 0.78);
 
-  /* The /agents race is a lit instrument panel in either scheme: a frame that
+  /* The replay panels are lit instruments in either scheme: a frame that
    * catches the light along its top edge and a shadow that lifts it off the
    * page. The two are the only gradient and the only drop shadow on the site. */
   --panel-frame: linear-gradient(180deg, rgba(24, 14, 8, 0.22), rgba(24, 14, 8, 0.1));

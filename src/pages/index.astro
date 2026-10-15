@@ -2,7 +2,7 @@
 import { Image } from "astro:assets";
 import Page from "../layouts/Page.astro";
 import Measure from "../components/Measure.astro";
-import Stamped from "../components/Stamped.astro";
+import AgentRace from "../components/AgentRace.astro";
 import RebuildRace from "../components/RebuildRace.astro";
 import Sample from "../components/Sample.astro";
 import Quote from "../components/Quote.astro";
@@ -190,16 +190,19 @@ const windows = windowsAsset(release);
 
     {/* The agent argument, before the Crystal one, because it is the reason
         this language exists rather than a feature it grew. */}
-    <section class="sec split" id="agents">
-      <div class="sec__head">
-        <p class="eyebrow">Written for agents</p>
-        <h2 class="h2">A model reads the interface, not the repository.</h2>
-        <p class="p">
-          A module compiles against its dependencies' declarations, never their
-          bodies. That one rule is why a module's interface is a file, and why{" "}
-          <code>iyi mod context</code> can hand an agent the exact surface of
-          every import with no body in it and no repository behind it.
-        </p>
+    <section class="sec" id="agents">
+      <div class="split">
+        <div class="sec__head">
+          <p class="eyebrow">Agent experience (AX)</p>
+          <h2 class="h2">A model reads the interface, not the repository.</h2>
+          <p class="p">
+            A module compiles against its dependencies' declarations, never their
+            bodies. That one rule is why a module's interface is a file, and why{" "}
+            <code>iyi mod context</code> can hand an agent the exact surface of
+            every import with no body in it and no repository behind it.
+          </p>
+          <a class="link" href={`${base}agents/`}>The loop, recorded →</a>
+        </div>
         <ul class="list checks">
           <li>
             <strong>Grounding is one command.</strong>
@@ -218,25 +221,16 @@ const windows = windowsAsset(release);
             <span class="p"><code>iyi lsp</code> for an editor and <code>iyi mcp</code> for a harness, both over stdio.</span>
           </li>
         </ul>
-        <a class="link" href={`${base}agents/`}>The loop, recorded →</a>
       </div>
-      <Stamped
-        claim={`${pack.tokens_low} to ${pack.tokens_high}%`}
-        tail="fewer prompt tokens."
-        subject={pack.subject}
-        outcome="win"
-        accent
-      >
-        <p>
-          The grounding pack is {pack.size_low} to {pack.size_high}% of the
-          size of the sources it replaces, over {pack.runs} measured runs.
+      <div class="race-wrap">
+        <AgentRace loop={`${base}agents/#loop`} hint="The recorded session →" />
+        <p class="small">
+          A replay of the measured result; the code in the lanes is
+          illustrative. Rounds to green were the model's, tied{" "}
+          {pack.rounds_tied} times and lost {pack.rounds_lost}.{" "}
+          <a href={`${base}agents/`}>How it was measured</a>.
         </p>
-        <p>
-          Rounds to green were the model's, and they were tied{" "}
-          {pack.rounds_tied} times and lost {pack.rounds_lost} times. Both
-          readings come off one gate and both are published.
-        </p>
-      </Stamped>
+      </div>
     </section>
 
     <section class="sec split" id="crystal">
@@ -367,8 +361,10 @@ const windows = windowsAsset(release);
       gap: 16px;
     }
 
-    .checks {
-      margin-top: 8px;
+    .race-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
 
     .pillar {

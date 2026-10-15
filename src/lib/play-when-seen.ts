@@ -9,9 +9,9 @@
  * those it is enough that it fills the band; without that, a tall figure on a
  * short screen never played and stayed empty.
  *
- * A figure in the first screen, the home page's rebuild and the /agents race,
- * passes `threshold` instead and plays as soon as that share of it shows,
- * which on load is at once.
+ * A figure in the first screen, the home page's rebuild, passes `threshold`
+ * instead and plays as soon as that share of it shows, which on load is at
+ * once.
  *
  * The caller owns the Replay control and calls `play` itself.
  */
@@ -37,9 +37,15 @@ export function playWhenSeen(element: Element, play: () => void, options: { thre
         }
       }
     },
+    /* A callback comes only when the ratio crosses a threshold. A figure that
+     * fills the band stops growing at band / height of itself, short of 1, so
+     * with coarse steps the moment it filled could fall between two of them:
+     * the /agents race on a phone, 825 px tall in a 566 px band, sat at 0.69
+     * between 0.5 and 0.75 and never played. Steps of a hundredth leave no such
+     * gap for any figure up to ten bands tall. */
     threshold !== undefined
       ? { threshold }
-      : { threshold: [0, 0.25, 0.5, 0.75, 0.9, 1], rootMargin: "0px 0px -33% 0px" },
+      : { threshold: Array.from({ length: 101 }, (_, i) => i / 100), rootMargin: "0px 0px -33% 0px" },
   );
   seen.observe(element);
 }
