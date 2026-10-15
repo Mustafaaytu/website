@@ -128,7 +128,15 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
         <a href={`${base}playground/`}>Playground</a>
         {section && ` · ${section.title}`}{step && ` · ${step}`}
       </p>
-      <h1 class="h1">{sample.set === "tour" ? sample.id : sample.path}</h1>
+      <h1 class="h1">
+        {
+          sample.set === "tour"
+            ? sample.id
+            : sample.path.split("/").map((part, i, all) => (
+                <>{part}{i < all.length - 1 && <>/<wbr /></>}</>
+              ))
+        }
+      </h1>
       <p class="lead">{blurb}.</p>
     </div>
 
@@ -742,6 +750,28 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     }).observe(output, { childList: true, subtree: true, characterData: true });
   }
 </script>
+
+<script>
+  /* The tour list scrolls: sideways as a strip on a phone, down as a column
+   * beside the bench on a wide screen. Either way it opens with the current
+   * program in the middle of it, not wherever the list happens to start, so
+   * the reader sees where they are. Only the list scrolls, never the page. */
+  const side = document.querySelector<HTMLElement>(".pg-side");
+  const here = side?.querySelector<HTMLElement>('[aria-current="page"]');
+  if (side && here) {
+    const centre = () => {
+      const box = side.getBoundingClientRect();
+      const at = here.getBoundingClientRect();
+      if (side.scrollWidth > side.clientWidth) {
+        side.scrollLeft += at.left - box.left - (side.clientWidth - at.width) / 2;
+      }
+      if (side.scrollHeight > side.clientHeight) {
+        side.scrollTop += at.top - box.top - (side.clientHeight - at.height) / 2;
+      }
+    };
+    centre();
+  }
+</script>
 <style>
   /* The tour down the side and the program beside it. Below the breakpoint the
    * side becomes a row of chips that scrolls, above the program. */
@@ -758,7 +788,9 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     grid-row: 1;
     position: sticky;
     top: 80px;
-    max-height: calc(100vh - 96px);
+    /* Short enough to end inside the screen where it starts, under the
+     * masthead and the page's top padding, not only once it has stuck. */
+    max-height: calc(100vh - 136px);
     overflow: auto;
     font-size: 14px;
     display: flex;
@@ -801,9 +833,16 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     .pg {
       grid-template-columns: minmax(0, 1fr);
     }
-    .bench {
+    /* Doubled up so these outrank the two-column placement below them in the
+     * file: without it the bench kept its second column on a phone and the
+     * tour squeezed into a sliver beside it. */
+    .pg .bench {
       grid-column: 1;
       grid-row: 2;
+    }
+    .pg .pg-side {
+      grid-column: 1;
+      grid-row: 1;
     }
     .pg-side {
       position: static;
@@ -855,7 +894,13 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
     font-weight: 500;
     font-stretch: normal;
     letter-spacing: -0.03em;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
+  }
+
+  @media (max-width: 600px) {
+    .pg-title .h1 {
+      font-size: 28px;
+    }
   }
 
   /* One card: the program, the run bar, what it printed. */
@@ -868,6 +913,16 @@ const step = at >= 0 ? `${at + 1} of ${tourSamples.length}` : null;
 
   .pg-card > .source-head {
     border-bottom: var(--hair) solid var(--hairline);
+    flex-wrap: nowrap;
+  }
+
+  .pg-card > .source-head .path {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .pg-card > .source-head .copy {
+    flex: none;
   }
 
   .panes {
