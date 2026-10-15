@@ -61,7 +61,7 @@
 
 import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const site = resolve(here, "..");
@@ -90,7 +90,7 @@ const files = (dir) =>
  * SITE_BASE set, a page's `href` carries that prefix and joining it onto
  * `dist/` blind would find nothing, weigh nothing, and pass. A URL this script
  * built itself from a path on disk has no prefix, hence the conditional. */
-const base = (await import(resolve(site, "astro.config.mjs"))).default.base.replace(/\/*$/, "/");
+const base = (await import(pathToFileURL(resolve(site, "astro.config.mjs")).href)).default.base.replace(/\/*$/, "/");
 
 const asset = (url) => {
   const path = url.replace(/[?#].*$/, "");
